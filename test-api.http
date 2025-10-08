@@ -1,0 +1,21 @@
+### ✅ Check if backend is running
+GET http://localhost:5000
+
+### 🧾 Register a new user
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Adyan Tester",
+  "email": "adyan@test.com",
+  "password": "123456"
+}
+
+### 🔑 Login existing user
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "adyan@test.com",
+  "password": "123456"
+}
