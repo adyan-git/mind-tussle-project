@@ -1,24 +1,22 @@
-### ✅ Check if backend is running
-GET http://localhost:5000
-
-### 🧾 Register a new user
+### Register
 POST http://localhost:5000/api/auth/register
 Content-Type: application/json
 
 {
-  "name": "Adyan Tester",
-  "email": "adyan@test.com",
-  "password": "123456"
+  "name": "Demo User",
+  "email": "demo@example.com",
+  "password": "password123"
 }
 
-### 🔑 Login existing user
+### Login
 POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "adyan@test.com",
-  "password": "123456"
+  "email": "demo@example.com",
+  "password": "password123"
 }
-### 🧠 Protected Route (after login — replace TOKEN)
-GET http://localhost:5000/api/protected
-Authorization: Bearer TOKEN
+### Protected
+GET http://localhost:5000/api/test/protected
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTFmMmUxODVlMmVhYTE4YTdhMjU0MiIsImVtYWlsIjoiZGVtb0BleGFtcGxlLmNvbSIsImlhdCI6MTc2Mjc4NDAwMywiZXhwIjoxNzYyNzg3NjAzfQ.g9vgIrYMYNIEd5Yol6XzaA6827T0JuzCvfMED13q5cM
+

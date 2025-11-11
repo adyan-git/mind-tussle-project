@@ -1,37 +1,26 @@
-// src/middleware/auth.js
-import { verifyAccessToken } from "../utils/token.js";
+// backend/src/middleware/auth.js
+import jwt from "jsonwebtoken";
 
-export const authMiddleware = (req, res, next) => {
+export const auth = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    let token = null;
+    let token;
 
     if (authHeader && authHeader.startsWith("Bearer ")) {
       token = authHeader.split(" ")[1];
-    } else if (req.cookies && req.cookies.token) {
+    } else if (req.cookies?.token) {
       token = req.cookies.token;
     }
 
-    if (!token) return res.status(401).json({ message: "No token provided" });
+    if (!token) {
+      return res.status(401).json({ msg: "No token, authorization denied" });
+    }
 
-    const decoded = verifyAccessToken(token);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    console.error("Auth middleware error:", err.message);
+    return res.status(401).json({ msg: "Token is not valid" });
   }
-};
-// src/middleware/auth.js
-
-export const verifyToken = (req, res, next) => {
-  console.log("verifyToken placeholder called");
-  next(); // allow requests to continue
-};
-
-
-export const authorizeRoles = (...roles) => (req, res, next) => {
-  if (!req.user || !roles.includes(req.user.role)) {
-    return res.status(403).json({ message: "Access denied" });
-  }
-  next();
 };
