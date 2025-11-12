@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import Join from './pages/Join';
+import Play from './pages/Play';
+import Results from './pages/Results';
 
 // --- HELPER COMPONENTS & ICONS ---
 // In a real multi-file project, these would be in separate files.
@@ -353,9 +356,9 @@ export default function App() {
         switch (currentPage) {
             case 'dashboard': return <DashboardPage setCurrentPage={setCurrentPage} />;
             case 'create': return <CreateQuizPage />;
-            case 'join': return <JoinQuizPage setCurrentPage={setCurrentPage} />;
-            case 'quiz': return <QuizPage setCurrentPage={setCurrentPage} />;
-            case 'results': return <ResultsPage setCurrentPage={setCurrentPage} />;
+            case 'join': return <Join setCurrentPage={setCurrentPage} />;
+            case 'quiz': return <Play setCurrentPage={setCurrentPage} />;
+            case 'results': return <Results setCurrentPage={setCurrentPage} />;
             case 'history': return <HistoryPage setCurrentPage={setCurrentPage} />;
             case 'leaderboard': return <LeaderboardPage />;
             default: return <DashboardPage setCurrentPage={setCurrentPage} />;
