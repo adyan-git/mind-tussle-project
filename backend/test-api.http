@@ -1,4 +1,8 @@
-### Register
+############################
+### 🔐 AUTH TESTS (optional)
+############################
+
+### Register new user
 POST http://localhost:5000/api/auth/register
 Content-Type: application/json
 
@@ -8,7 +12,7 @@ Content-Type: application/json
   "password": "password123"
 }
 
-### Login
+### Login existing user
 POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
@@ -16,7 +20,124 @@ Content-Type: application/json
   "email": "demo@example.com",
   "password": "password123"
 }
-### Protected
-GET http://localhost:5000/api/test/protected
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTFmMmUxODVlMmVhYTE4YTdhMjU0MiIsImVtYWlsIjoiZGVtb0BleGFtcGxlLmNvbSIsImlhdCI6MTc2Mjc4NDAwMywiZXhwIjoxNzYyNzg3NjAzfQ.g9vgIrYMYNIEd5Yol6XzaA6827T0JuzCvfMED13q5cM
 
+### Test protected route (replace token below if needed)
+GET http://localhost:5000/api/test/protected
+Authorization: Bearer <PASTE_YOUR_JWT_TOKEN_HERE>
+
+
+############################
+### 🧩 QUIZ SESSION FLOW
+############################
+
+### 1️⃣ Create Demo Quiz + Session
+# Seeds a demo quiz and creates a new session.
+GET http://localhost:5000/api/demo
+
+# → Response fields:
+#    sessionId  → use in next steps
+#    joinCode   → for frontend Join
+#    quiz._id   → optional
+
+
+### 2️⃣ create Session from an existing quiz
+# Use only if you already have a quizId from DB.
+POST http://localhost:5000/api/sessions
+Content-Type: application/json
+
+{ "quizId": "6913518edd9b7650a4c303ce" }
+
+# → Response: { sessionId, joinCode }
+
+
+
+
+### Join Session (Alice)
+POST http://localhost:5000/api/sessions/691415e436cea5d8c0b17a0e/join
+Content-Type: application/json
+
+{
+  "name": "Alice"
+}
+
+
+### 4️⃣ Join Session (Player: Bob)
+POST http://localhost:5000/api/sessions/691415e436cea5d8c0b17a0e/join
+Content-Type: application/json
+
+{ "name": "Bob" }
+
+# → Response: { participantId, name }
+
+
+
+### 5️⃣ Get Current Question (player polling)
+GET http://localhost:5000/api/sessions/691415e436cea5d8c0b17a0e/current
+
+# → Response:
+#   {
+#     "activeQuestionIndex": 0,
+#     "question": { "text": "...", "options": [...] },
+#     "isActive": true
+#   }
+
+
+### 6️⃣ Submit Answer (Alice)
+POST http://localhost:5000/api/sessions/691415e436cea5d8c0b17a0e/answer
+Content-Type: application/json
+
+{
+  "participantId": "b3ab0617",
+  "selectedIndex": 2
+}
+
+# → Response: { message, isCorrect, currentScore }
+
+
+### 7️⃣ Submit Answer (Bob)
+POST http://localhost:5000/api/sessions/691415e436cea5d8c0b17a0e/answer
+Content-Type: application/json
+
+{
+  "participantId": "228c4780",
+  "selectedIndex": 1
+}
+
+# → Response: { message, isCorrect, currentScore }
+
+
+
+### 8️⃣ Host Advances to Next Question
+POST http://localhost:5000/api/sessions/691415e436cea5d8c0b17a0e/next
+Content-Type: application/json
+
+{}
+
+# → Response:
+#    { "activeQuestionIndex": 1, "question": {...} }
+#    or { "message": "Session finished", "isActive": false }
+
+
+
+### 9️⃣ Get Current Question after Advance
+GET http://localhost:5000/api/sessions/691415e436cea5d8c0b17a0e/current
+
+
+
+### 🔟 Get Results / Leaderboard
+GET http://localhost:5000/api/sessions/691415e436cea5d8c0b17a0e/results
+
+# → Response: { leaderboard: [ { name, score, ... } ] }
+
+
+
+### 🔍 Lookup Session by Join Code
+GET http://localhost:5000/api/sessions/lookup/933E48
+
+# → Response:
+#   {
+#     "sessionId": "...",
+#     "joinCode": "...",
+#     "quizId": "...",
+#     "isActive": true
+#   }
