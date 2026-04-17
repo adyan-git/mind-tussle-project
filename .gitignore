@@ -120,6 +120,7 @@ tests/
 __tests__/
 *.test.js
 *.spec.js
+backend/testLearningPaths.js
 jest.config.js
 vitest.config.js
 babel.config.cjs
@@ -130,3 +131,6 @@ frontend/public/sw.js
 frontend/public/offline.html
 frontend/public/pwa-*.html
 frontend/public/manifest-test.html
+frontend/src/components/PWAInstallTest.jsx
+frontend/src/components/OfflineBanner.jsx
+frontend/src/components/OfflineBanner.css
