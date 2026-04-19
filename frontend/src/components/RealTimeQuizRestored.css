@@ -1,0 +1,36 @@
+.rt-restored-page {
+    min-height: 100vh;
+    padding: 1.5rem;
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+.rt-restored-page h1,
+.rt-restored-page h2 {
+    color: #10b981;
+}
+
+.rt-card {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid #10b981;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.rt-card input,
+.rt-card select,
+.rt-card button {
+    width: 100%;
+    margin-top: 0.45rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+}
+
+.rt-card button {
+    border: none;
+    background: #10b981;
+    color: #0f172a;
+    font-weight: 700;
+    cursor: pointer;
+}
