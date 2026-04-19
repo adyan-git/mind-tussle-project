@@ -3,7 +3,9 @@
 
 const config = {
   // Backend URL - this can be public as it's just the API endpoint
-  BACKEND_URL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
+  // Prefer VITE_API_URL (new), fallback to VITE_BACKEND_URL (legacy).
+  API_URL: import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
+  BACKEND_URL: import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
 
   // App configuration
   APP_NAME: 'MindTussle',

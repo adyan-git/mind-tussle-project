@@ -27,7 +27,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 // ✅ Lazy load all pages
 const AdaptiveQuiz = lazy(() => import("./components/AdaptiveQuiz"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const AdminQuizzes = lazy(() => import("./pages/AdminQuizzes"));
+const AdminCreateQuiz = lazy(() => import("./pages/AdminCreateQuiz"));
 const AdminReports = lazy(() => import("./pages/AdminReports"));
 const UserQuizzes = lazy(() => import("./pages/UserQuiz"));
 const TakeQuiz = lazy(() => import("./pages/TakeQuiz"));
@@ -67,7 +67,7 @@ import StudyGroups from "./components/StudyGroups";
 
 // Phase 4: Next-Gen Features
 import AIStudyBuddy from "./components/AIStudyBuddy";
-import RealTimeQuiz from "./components/RealTimeQuiz";
+import RealTimeQuiz from "./components/RealTimeQuizRestored";
 import GamificationHub from "./components/GamificationHub";
 
 // Phase 5: Advanced Learning Path Engine
@@ -266,7 +266,7 @@ const App = () => {
                                 <Route path="/learning-paths" element={<LearningPathHub />} />
 
                                 <Route path="/admin" element={<AdminDashboard />} />
-                                <Route path="/admin/create" element={<AdminQuizzes />} />
+                                <Route path="/admin/create" element={<AdminCreateQuiz />} />
                                 <Route path="/adaptive/:id" element={<AdaptiveQuiz />} />
                                 <Route path="/admin/report" element={<AdminReports />} />
                                 <Route path="/admin/quiz/:id" element={<QuizQuestions />} />
