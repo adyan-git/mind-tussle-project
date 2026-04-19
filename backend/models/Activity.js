@@ -16,7 +16,8 @@ const activitySchema = new mongoose.Schema({
             "friend_added",
             "level_up",
             "bookmark_added",
-            "report_viewed"
+            "report_viewed",
+            "real_time_battle"
         ],
         required: true,
         index: true

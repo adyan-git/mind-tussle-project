@@ -140,7 +140,7 @@ if (!JWT_SECRET) {
 export const registerUser = async (req, res) => {
     logger.info(`Attempting to register user with email: ${req.body.email}`);
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password, role } = req.body;
 
         const existingUser = await UserQuiz.findOne({ email: email.toLowerCase() });
         if (existingUser) {
@@ -159,7 +159,8 @@ export const registerUser = async (req, res) => {
         const newUser = new UserQuiz({
             name: name.trim(),
             email: email.toLowerCase().trim(),
-            password: hashedPassword
+            password: hashedPassword,
+            role: role === 'admin' ? 'admin' : 'user'
         });
 
         // SECURITY: Save IP address if valid (not 'unknown' or invalid format)
