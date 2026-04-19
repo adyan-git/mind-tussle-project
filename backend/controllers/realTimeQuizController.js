@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import Quiz from "../models/Quiz.js";
 import UserQuiz from "../models/User.js";
 import logger from "../utils/logger.js";
+import { createActivity } from "./activityController.js";
 import { sendSuccess, sendError, sendNotFound } from "../utils/responseHelper.js";
 import AppError from "../utils/AppError.js";
 
@@ -374,18 +375,46 @@ export const initializeRealTimeQuiz = (server) => {
                     room.answers.set(questionIndex, new Map());
                 }
 
+                const question = room.quiz.questions[questionIndex];
+                const correctAnswer = question.correctAnswer;
+                let isCorrect = false;
+                if (typeof correctAnswer === "string" && typeof answer === "number") {
+                    const letterToNumber = { "A": 0, "B": 1, "C": 2, "D": 3 };
+                    isCorrect = answer === letterToNumber[correctAnswer];
+                } else if (typeof correctAnswer === "number" && typeof answer === "string") {
+                    const numberToLetter = { 0: "A", 1: "B", 2: "C", 3: "D" };
+                    isCorrect = numberToLetter[answer] === correctAnswer;
+                } else {
+                    isCorrect = answer === correctAnswer;
+                }
+
+                let points = 0;
+                if (isCorrect) {
+                    const maxPoints = 1000;
+                    const actTimeSpent = timeSpent || ((new Date() - room.questionStartTime) / 1000);
+                    const safeTimeSpent = Math.max(0, Math.min(actTimeSpent, room.settings.timePerQuestion));
+                    const timeBonus = Math.max(0, (room.settings.timePerQuestion - safeTimeSpent) / room.settings.timePerQuestion);
+                    points = Math.round(maxPoints * (0.5 + 0.5 * timeBonus));
+                    const currentScore = room.scores.get(socket.userId) || 0;
+                    room.scores.set(socket.userId, currentScore + points);
+                }
+
                 // Record answer
                 room.answers.get(questionIndex).set(socket.userId, {
                     answer,
                     timeSpent,
-                    submittedAt: new Date()
+                    submittedAt: new Date(),
+                    isCorrect,
+                    points
                 });
 
                 // Update player data
                 const player = room.players.get(socket.userId);
                 if (player) {
-                    player.answers[questionIndex] = { answer, timeSpent };
+                    player.answers[questionIndex] = { answer, timeSpent, points };
                 }
+
+                io.to(roomId).emit("leaderboard_update", { leaderboard: getLeaderboard(room) });
 
                 // Check if all players have answered
                 const playersAnswered = room.answers.get(questionIndex).size;
@@ -488,32 +517,8 @@ export const initializeRealTimeQuiz = (server) => {
             const playerAnswer = questionAnswers.get(userId);
 
             // Handle both number and letter format answers
-            let isCorrect = false;
-            if (playerAnswer) {
-                if (typeof correctAnswer === "string" && typeof playerAnswer.answer === "number") {
-                    // Convert letter answer (A, B, C, D) to number (0, 1, 2, 3)
-                    const letterToNumber = { "A": 0, "B": 1, "C": 2, "D": 3 };
-                    isCorrect = playerAnswer.answer === letterToNumber[correctAnswer];
-                } else if (typeof correctAnswer === "number" && typeof playerAnswer.answer === "string") {
-                    // Convert number answer to letter format
-                    const numberToLetter = { 0: "A", 1: "B", 2: "C", 3: "D" };
-                    isCorrect = numberToLetter[playerAnswer.answer] === correctAnswer;
-                } else {
-                    // Same type comparison
-                    isCorrect = playerAnswer.answer === correctAnswer;
-                }
-            }
-
-            let points = 0;
-            if (isCorrect) {
-                // Award points based on speed (faster = more points)
-                const maxPoints = 1000;
-                const timeBonus = Math.max(0, (room.settings.timePerQuestion - (playerAnswer?.timeSpent || room.settings.timePerQuestion)) / room.settings.timePerQuestion);
-                points = Math.round(maxPoints * (0.5 + 0.5 * timeBonus));
-
-                const currentScore = room.scores.get(userId) || 0;
-                room.scores.set(userId, currentScore + points);
-            }
+            let isCorrect = playerAnswer ? playerAnswer.isCorrect : false;
+            let points = playerAnswer ? playerAnswer.points : 0;
 
             results.push({
                 playerId: userId,
@@ -550,6 +555,20 @@ export const initializeRealTimeQuiz = (server) => {
         // Update user XP and stats
         updatePlayerStats(room);
 
+        // Log Real-Time Battle Activity
+        finalLeaderboard.forEach((player, index) => {
+            const rank = index + 1;
+            createActivity(player.playerId, "real_time_battle", {
+                message: `User participated in a Real-Time Battle: ${room.quiz?.title || "Unknown Quiz"}`,
+                roomId: room.id,
+                quizName: room.quiz?.title || "Unknown Quiz",
+                rank: rank,
+                totalPlayers: room.players.size,
+                score: player.score,
+                accuracy: player.accuracy
+            });
+        });
+
         io.to(room.id).emit("quiz_finished", {
             leaderboard: finalLeaderboard,
             totalQuestions: room.quiz.questions.length,
@@ -565,13 +584,26 @@ export const initializeRealTimeQuiz = (server) => {
 
     function getLeaderboard(room) {
         const leaderboard = [];
+        const totalQuestions = room.quiz ? room.quiz.questions.length : 1;
+
         room.players.forEach((player, userId) => {
+            let correctAnswers = 0;
+            room.answers.forEach((questionAnswers) => {
+                const userAns = questionAnswers.get(userId);
+                if (userAns && userAns.isCorrect) {
+                    correctAnswers++;
+                }
+            });
+
+            const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+
             leaderboard.push({
                 playerId: userId,
                 playerName: player.name,
                 score: room.scores.get(userId) || 0,
                 avatar: player.avatar,
-                level: player.level
+                level: player.level,
+                accuracy: accuracy
             });
         });
 
