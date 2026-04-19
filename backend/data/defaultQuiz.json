@@ -1,0 +1,64 @@
+{
+  "title": "Sample Quiz",
+  "category": "General Knowledge",
+  "duration": 10,
+  "totalMarks": 5,
+  "passingMarks": 3,
+  "questions": [
+    {
+      "question": "Which protocol secures web traffic with encryption?",
+      "options": ["HTTP", "FTP", "HTTPS", "SMTP"],
+      "correctAnswer": "C",
+      "difficulty": "easy",
+      "explanation": "HTTPS uses TLS encryption to secure browser-server communication.",
+      "bloomLevel": "understand"
+    },
+    {
+      "question": "What does API stand for?",
+      "options": [
+        "Application Program Interface",
+        "Applied Protocol Integration",
+        "Advanced Program Internet",
+        "Automated Process Interface"
+      ],
+      "correctAnswer": "A",
+      "difficulty": "easy",
+      "explanation": "API means Application Programming Interface.",
+      "bloomLevel": "remember"
+    },
+    {
+      "question": "In databases, indexing primarily improves what?",
+      "options": [
+        "Storage cost",
+        "Query performance",
+        "Network latency",
+        "Data encryption"
+      ],
+      "correctAnswer": "B",
+      "difficulty": "medium",
+      "explanation": "Indexes speed up data retrieval by optimizing lookup operations.",
+      "bloomLevel": "understand"
+    },
+    {
+      "question": "Which company created the Go programming language?",
+      "options": ["Meta", "Microsoft", "Google", "Apple"],
+      "correctAnswer": "C",
+      "difficulty": "medium",
+      "explanation": "Go was designed at Google.",
+      "bloomLevel": "remember"
+    },
+    {
+      "question": "What is the best description of machine learning?",
+      "options": [
+        "Hard-coded decision trees only",
+        "Systems learning patterns from data",
+        "Manual database tuning",
+        "Static rule-based scripting"
+      ],
+      "correctAnswer": "B",
+      "difficulty": "easy",
+      "explanation": "Machine learning learns patterns from data to make predictions or decisions.",
+      "bloomLevel": "understand"
+    }
+  ]
+}

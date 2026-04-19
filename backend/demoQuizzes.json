@@ -1,0 +1,142 @@
+{
+  "computerScience": {
+    "title": "Computer Science Zero-Cost Fallback Quiz",
+    "questions": [
+      {
+        "question": "In an adaptive algorithm for sorting nearly sorted data, which strategy is usually most efficient?",
+        "options": [
+          "Use insertion sort because it performs well on nearly sorted arrays",
+          "Use bubble sort because it compares all adjacent pairs repeatedly",
+          "Use selection sort because it always minimizes swaps",
+          "Use merge sort because recursion depth is always constant"
+        ],
+        "answer": "A",
+        "correctAnswer": "A",
+        "difficulty": "medium",
+        "explanation": "Insertion sort runs close to linear time when the array is already almost sorted."
+      },
+      {
+        "question": "Which database index type is generally most suitable for range queries on ordered values?",
+        "options": [
+          "Hash index",
+          "Bitmap index",
+          "B-tree index",
+          "Full-text index"
+        ],
+        "answer": "C",
+        "correctAnswer": "C",
+        "difficulty": "medium",
+        "explanation": "B-tree indexes keep keys ordered, which supports efficient range scans."
+      },
+      {
+        "question": "In adaptive query optimization, what does the optimizer primarily use to revise execution plans at runtime?",
+        "options": [
+          "Static schema comments",
+          "Observed cardinality and runtime statistics",
+          "Only developer-written SQL hints",
+          "The database server hostname"
+        ],
+        "answer": "B",
+        "correctAnswer": "B",
+        "difficulty": "hard",
+        "explanation": "Adaptive optimization uses runtime feedback like actual row counts to improve plans."
+      },
+      {
+        "question": "Why can dynamic programming be considered adaptive in many algorithmic problems?",
+        "options": [
+          "It discards all previous computations at each step",
+          "It adapts by reusing optimal subproblem solutions based on problem state",
+          "It always converts recursion to random guessing",
+          "It requires no relation between subproblems"
+        ],
+        "answer": "B",
+        "correctAnswer": "B",
+        "difficulty": "medium",
+        "explanation": "Dynamic programming adapts to state transitions by reusing previously computed results."
+      },
+      {
+        "question": "For a transactional database, which ACID property ensures that either all operations in a transaction happen or none do?",
+        "options": [
+          "Consistency",
+          "Durability",
+          "Atomicity",
+          "Isolation"
+        ],
+        "answer": "C",
+        "correctAnswer": "C",
+        "difficulty": "easy",
+        "explanation": "Atomicity guarantees all-or-nothing transaction execution."
+      }
+    ]
+  },
+  "iplHistory": {
+    "title": "IPL History Zero-Cost Fallback Quiz",
+    "questions": [
+      {
+        "question": "Who led Chennai Super Kings as captain to multiple IPL titles in the early and middle eras?",
+        "options": [
+          "Rohit Sharma",
+          "MS Dhoni",
+          "Gautam Gambhir",
+          "Virat Kohli"
+        ],
+        "answer": "B",
+        "correctAnswer": "B",
+        "difficulty": "easy",
+        "explanation": "MS Dhoni has captained CSK to several IPL championship wins."
+      },
+      {
+        "question": "Which team won the inaugural IPL season in 2008?",
+        "options": [
+          "Rajasthan Royals",
+          "Mumbai Indians",
+          "Deccan Chargers",
+          "Chennai Super Kings"
+        ],
+        "answer": "A",
+        "correctAnswer": "A",
+        "difficulty": "easy",
+        "explanation": "Rajasthan Royals won the first IPL season under Shane Warne."
+      },
+      {
+        "question": "Which captain is strongly associated with Mumbai Indians' multiple IPL title runs?",
+        "options": [
+          "Shikhar Dhawan",
+          "David Warner",
+          "Rohit Sharma",
+          "KL Rahul"
+        ],
+        "answer": "C",
+        "correctAnswer": "C",
+        "difficulty": "medium",
+        "explanation": "Rohit Sharma captained Mumbai Indians to multiple IPL titles."
+      },
+      {
+        "question": "Who holds the record for the highest individual score in an IPL innings (as of recent seasons)?",
+        "options": [
+          "Chris Gayle",
+          "AB de Villiers",
+          "Shubman Gill",
+          "Suresh Raina"
+        ],
+        "answer": "A",
+        "correctAnswer": "A",
+        "difficulty": "medium",
+        "explanation": "Chris Gayle's 175* remains one of the most iconic IPL batting records."
+      },
+      {
+        "question": "Which captain led Kolkata Knight Riders to IPL titles in the 2010s?",
+        "options": [
+          "Gautam Gambhir",
+          "Dinesh Karthik",
+          "Eoin Morgan",
+          "Andre Russell"
+        ],
+        "answer": "A",
+        "correctAnswer": "A",
+        "difficulty": "medium",
+        "explanation": "Gautam Gambhir captained KKR to championship wins in 2012 and 2014."
+      }
+    ]
+  }
+}
