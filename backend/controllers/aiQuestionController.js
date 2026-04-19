@@ -1,0 +1,373 @@
+import Quiz from "../models/Quiz.js";
+import UserQuiz from "../models/User.js";
+import mongoose from "mongoose";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateMCQWithContext, generateTrueFalseWithContext } from "../services/aiQuestionGenerator.js";
+import { resolveAdaptiveDifficulty } from "../services/knowledgeLevelService.js";
+import { generateFromGemini } from "../utils/geminiHelper.js";
+import logger from "../utils/logger.js";
+import { sendSuccess, sendError, sendValidationError, sendNotFound } from "../utils/responseHelper.js";
+import AppError from "../utils/AppError.js";
+
+const ALLOWED_AI_DIFFICULTIES = /** @type {const} */ (["easy", "medium", "hard"]);
+const ALLOWED_RESOLVE_MODES = /** @type {const} */ (["performance", "intelligent", "blended"]);
+const ALLOWED_PERFORMANCE = /** @type {const} */ (["low", "medium", "high"]);
+
+/**
+ * Explicit body.difficulty wins. Otherwise same resolver as /api/adaptive (profile + optional session blend).
+ */
+async function resolveDifficultyForStandardGenerate(reqBody, userId, quiz) {
+    const raw = reqBody?.difficulty;
+    if (raw != null && raw !== "") {
+        const d = String(raw).toLowerCase().trim();
+        if (ALLOWED_AI_DIFFICULTIES.includes(d)) {
+            return {
+                difficulty: d,
+                source: "explicit_body",
+                difficultyMode: null,
+                profile: null,
+            };
+        }
+    }
+
+    const dmRaw = String(reqBody?.difficultyMode || "").toLowerCase().trim();
+    const difficultyMode = ALLOWED_RESOLVE_MODES.includes(dmRaw) ? dmRaw : "intelligent";
+
+    const pRaw = String(reqBody?.performance || "").toLowerCase().trim();
+    const performance = ALLOWED_PERFORMANCE.includes(pRaw) ? pRaw : "medium";
+
+    if (!userId) {
+        return {
+            difficulty: "medium",
+            source: "fallback_no_user",
+            difficultyMode,
+            profile: null,
+        };
+    }
+
+    const resolved = await resolveAdaptiveDifficulty({ difficultyMode, performance }, userId, quiz);
+    return {
+        difficulty: resolved.difficulty,
+        source: resolved.source,
+        difficultyMode,
+        profile: resolved.profile || null,
+    };
+}
+
+// ✅ General MCQ Generator
+export const generateQuizQuestions = async (req, res) => {
+    logger.info(
+        `Generating ${req.body.numQuestions} ${req.body.questionType} questions for quiz ${req.params.id} on topic "${req.body.topic}"`
+    );
+    try {
+        const { topic, numQuestions, questionType = "mcq" } = req.body;
+        const { id } = req.params;
+
+        if (!topic || !numQuestions) {
+            logger.warn("Missing topic or numQuestions for AI question generation");
+            return sendValidationError(
+                res,
+                { topic: "Topic and number of questions are required" },
+                "Topic and number of questions are required"
+            );
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            logger.warn(`Invalid quiz ID for AI question generation: ${id}`);
+            return sendValidationError(res, { id: "Invalid quiz ID" }, "Invalid quiz ID");
+        }
+
+        const quiz = await Quiz.findById(id);
+        if (!quiz) {
+            logger.warn(`Quiz not found: ${id} for AI question generation`);
+            return sendNotFound(res, "Quiz");
+        }
+
+        const userId = req.user?.id;
+        const resolvedDiff = await resolveDifficultyForStandardGenerate(req.body, userId, quiz);
+        const difficulty = resolvedDiff.difficulty;
+
+        logger.info(
+            `Standard AI generate quiz ${id}: difficulty=${difficulty} source=${resolvedDiff.source} mode=${resolvedDiff.difficultyMode ?? "n/a"}`
+        );
+
+        const existingTexts = quiz.questions.map((q) => q.question.trim());
+
+        let finalQuestions;
+        try {
+            if (questionType === "mcq") {
+                const { questions } = await generateMCQWithContext(
+                    topic,
+                    numQuestions,
+                    difficulty,
+                    existingTexts
+                );
+                finalQuestions = questions;
+            } else if (questionType === "true_false") {
+                const { questions } = await generateTrueFalseWithContext(
+                    topic,
+                    numQuestions,
+                    difficulty,
+                    existingTexts
+                );
+                finalQuestions = questions;
+            } else {
+                logger.warn(`Invalid question type for AI question generation: ${questionType}`);
+                return sendValidationError(res, { questionType: "Invalid question type" }, "Invalid question type");
+            }
+        } catch (error) {
+            logger.error(`Error generating questions:`, error.message);
+            throw error;
+        }
+
+        if (!finalQuestions.length) {
+            logger.warn("No new unique questions could be generated by AI");
+            return sendError(
+                res,
+                "No new unique questions could be generated. The quiz may already have similar questions, or the AI failed to generate valid questions.",
+                400
+            );
+        }
+
+        const questionsToAdd = finalQuestions.slice(0, numQuestions);
+        quiz.questions.push(...questionsToAdd);
+        quiz.totalMarks = quiz.questions.length;
+        quiz.passingMarks = Math.ceil(quiz.totalMarks / 2);
+        quiz.duration = quiz.questions.length * 2;
+
+        await quiz.save();
+        const addedCount = questionsToAdd.length;
+        logger.info(
+            `Successfully added ${addedCount} new questions to quiz ${id} (requested: ${numQuestions}, generated: ${finalQuestions.length})`
+        );
+        return sendSuccess(
+            res,
+            {
+                questions: questionsToAdd,
+                requested: numQuestions,
+                added: addedCount,
+                usedDifficulty: difficulty,
+                difficultySource: resolvedDiff.source,
+                difficultyMode: resolvedDiff.difficultyMode,
+                knowledgeProfile: resolvedDiff.profile || undefined,
+            },
+            `${addedCount} new questions added successfully${
+                addedCount < numQuestions
+                    ? ` (requested ${numQuestions}, but only ${addedCount} unique questions could be generated)`
+                    : ""
+            }`
+        );
+    } catch (err) {
+        logger.error({ message: "Error generating AI questions", error: err.message, stack: err.stack });
+        throw new AppError("Internal server error", 500);
+    }
+};
+
+// ✅ Adaptive MCQ Generator (performance / intelligent / blended difficulty)
+export const generateAdaptiveQuestions = async (req, res) => {
+    const {
+        performance = "medium",
+        quizId,
+        numQuestions = 5,
+        difficultyMode = "performance",
+    } = req.body;
+
+    logger.info(
+        `Generating ${numQuestions} adaptive questions for quiz ${quizId} mode=${difficultyMode} performance=${performance}`
+    );
+    try {
+        const allowedModes = ["performance", "intelligent", "blended"];
+        const mode = allowedModes.includes(difficultyMode) ? difficultyMode : "performance";
+
+        const quiz = await Quiz.findById(quizId);
+        if (!quiz) {
+            logger.warn(`Quiz not found: ${quizId} for adaptive question generation`);
+            return sendNotFound(res, "Quiz");
+        }
+
+        const topic = quiz.category;
+        const userId = req.user?.id;
+        const resolved = await resolveAdaptiveDifficulty({ difficultyMode: mode, performance }, userId, quiz);
+        const difficulty = resolved.difficulty;
+
+        const existingTexts = quiz.questions.map((q) => q.question.trim());
+
+        let finalQuestions;
+        try {
+            const { questions } = await generateMCQWithContext(topic, numQuestions, difficulty, existingTexts);
+            finalQuestions = questions;
+        } catch (error) {
+            logger.error(`Error generating adaptive questions:`, error.message);
+            throw error;
+        }
+
+        if (!finalQuestions.length) {
+            logger.warn("No new unique adaptive questions could be generated by AI after all attempts");
+            return sendError(
+                res,
+                "No new unique adaptive questions could be generated. The quiz may already have similar questions, or the AI failed to generate valid questions.",
+                400
+            );
+        }
+
+        const questionsToAdd = finalQuestions.slice(0, numQuestions);
+        quiz.questions.push(...questionsToAdd);
+        quiz.totalMarks = quiz.questions.length;
+        quiz.duration = quiz.questions.length * 2;
+        quiz.passingMarks = Math.ceil(quiz.totalMarks / 2);
+
+        await quiz.save();
+        const addedCount = questionsToAdd.length;
+        logger.info(
+            `Successfully added ${addedCount} new adaptive questions to quiz ${quizId} (requested: ${numQuestions}, generated: ${finalQuestions.length})`
+        );
+
+        if (userId) {
+            try {
+                await UserQuiz.findByIdAndUpdate(userId, {
+                    $push: {
+                        performanceHistory: {
+                            $each: [
+                                {
+                                    quizId,
+                                    category: quiz.category || "general",
+                                    difficulty,
+                                    score: null,
+                                    totalQuestions: addedCount,
+                                    timeSpent: 0,
+                                    date: new Date(),
+                                },
+                            ],
+                            $slice: -80,
+                        },
+                    },
+                    $set: {
+                        "intelligence.adaptiveDifficulty": difficulty,
+                        "intelligence.lastAnalyzed": new Date(),
+                    },
+                });
+            } catch (userErr) {
+                logger.warn({ message: "Could not update user knowledge snapshot", error: userErr.message });
+            }
+        }
+
+        return sendSuccess(
+            res,
+            {
+                questions: questionsToAdd,
+                requested: numQuestions,
+                added: addedCount,
+                usedDifficulty: difficulty,
+                difficultyMode: mode,
+                effectiveDifficultyMode: resolved.source,
+                difficultySource: resolved.source,
+                knowledgeProfile: resolved.profile || undefined,
+            },
+            `${addedCount} adaptive questions added successfully${
+                addedCount < numQuestions
+                    ? ` (requested ${numQuestions}, but only ${addedCount} unique questions could be generated)`
+                    : ""
+            }`
+        );
+    } catch (err) {
+        logger.error({
+            message: "Error generating adaptive AI questions",
+            error: err.message,
+            stack: err.stack,
+        });
+        throw new AppError("Internal server error", 500);
+    }
+};
+
+export const generateQuestionsFromPassage = async (req, res) => {
+    try {
+        if (req.user?.role !== "admin") {
+            return sendError(res, "Only admins can use Gemini autofill", 403);
+        }
+
+        const passage = String(req.body?.passage || "").trim();
+        if (!passage || passage.length < 30) {
+            return sendValidationError(
+                res,
+                { passage: "Provide at least 30 characters of source text" },
+                "Passage is too short"
+            );
+        }
+
+        const prompt = `You are helping an admin create a quiz from source text.
+Generate STRICT JSON only (no markdown), shaped as:
+{
+  "title": "short quiz title",
+  "category": "single category",
+  "passingMarks": number,
+  "questions": [
+    {
+      "question": "text",
+      "options": ["opt1","opt2","opt3","opt4"],
+      "correctAnswer": "A|B|C|D",
+      "difficulty": "easy|medium|hard",
+      "explanation": "short reason"
+    }
+  ]
+}
+Rules:
+- Return between 5 and 10 questions.
+- Exactly 4 options per question.
+- correctAnswer MUST be one of A,B,C,D.
+- Keep content faithful to the passage.
+- passingMarks should be around 60% of question count (rounded up).
+Passage:
+${passage}`;
+
+        let aiText;
+        try {
+            aiText = await generateFromGemini(prompt, { preferredModel: "gemini-2.5-flash-lite" });
+        } catch (apiError) {
+            console.error("Gemini API full error trace:", apiError);
+            logger.error({ message: "Gemini API unavailable or crashed", error: apiError.message || apiError });
+            return sendError(res, "Gemini API is currently down. Please try again later.", 503);
+        }
+        const firstBrace = aiText.indexOf("{");
+        const lastBrace = aiText.lastIndexOf("}");
+        if (firstBrace === -1 || lastBrace === -1) {
+            return sendError(res, "Gemini did not return valid JSON", 422);
+        }
+
+        const parsed = JSON.parse(aiText.slice(firstBrace, lastBrace + 1));
+        const questions = Array.isArray(parsed?.questions) ? parsed.questions : [];
+        const normalizedQuestions = questions
+            .map((q) => {
+                const options = Array.isArray(q?.options) ? q.options.map((x) => String(x || "").trim()) : [];
+                const correctAnswer = String(q?.correctAnswer || "").toUpperCase().trim();
+                return {
+                    question: String(q?.question || "").trim(),
+                    options: options.slice(0, 4),
+                    correctAnswer: ["A", "B", "C", "D"].includes(correctAnswer) ? correctAnswer : "A",
+                    difficulty: ["easy", "medium", "hard"].includes(String(q?.difficulty || "").toLowerCase())
+                        ? String(q.difficulty).toLowerCase()
+                        : "medium",
+                    explanation: String(q?.explanation || "").trim(),
+                };
+            })
+            .filter((q) => q.question && q.options.length === 4);
+
+        const safeCount = normalizedQuestions.length;
+        const suggestedPassingMarks = Number.isFinite(Number(parsed?.passingMarks))
+            ? Math.max(1, Math.min(safeCount, Number(parsed.passingMarks)))
+            : Math.max(1, Math.ceil(safeCount * 0.6));
+
+        return sendSuccess(
+            res,
+            {
+                title: String(parsed?.title || "").trim() || "Gemini Generated Quiz",
+                category: String(parsed?.category || "").trim() || "General",
+                passingMarks: suggestedPassingMarks,
+                questions: normalizedQuestions,
+            },
+            "Gemini autofill generated successfully"
+        );
+    } catch (err) {
+        logger.error({ message: "Error generating quiz from passage", error: err.message, stack: err.stack });
+        throw new AppError("Failed to generate quiz draft", 500);
+    }
+};
