@@ -12,6 +12,7 @@ const Register = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [role, setRole] = useState("user");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -178,7 +179,7 @@ const Register = () => {
 
             setLoading(true);
             axios.post(`/api/users/register`,
-                { name, email, password },
+                { name, email, password, role },
                 { headers: { "Content-Type": "application/json" } }
             )
             .then(() => {
@@ -319,6 +320,25 @@ const Register = () => {
                         {touched.password && errors.password && (
                             <span id="password-error" className="error-message" role="alert">{errors.password}</span>
                         )}
+                    </div>
+
+                    <div className="input-group">
+                        <label htmlFor="role">I want to:</label>
+                        <div className="input-wrapper">
+                            <select
+                                id="role"
+                                name="role"
+                                value={role}
+                                onChange={(e) => setRole(e.target.value)}
+                                disabled={loading}
+                                aria-label="Select role"
+                                className="auth-select"
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(255, 255, 255, 0.05)', color: 'white', border: '1px solid rgba(255, 255, 255, 0.1)', cursor: 'pointer', outline: 'none' }}
+                            >
+                                <option value="user" style={{ color: '#000' }}>Play Quizzes (User)</option>
+                                <option value="admin" style={{ color: '#000' }}>Create Quizzes (Admin)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div className={`input-group ${touched.confirmPassword && errors.confirmPassword ? 'input-error' : ''} ${touched.confirmPassword && !errors.confirmPassword && confirmPassword && password === confirmPassword ? 'input-valid' : ''}`}>
