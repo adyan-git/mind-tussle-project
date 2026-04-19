@@ -252,7 +252,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                                 <NavModule title="Admin Suite" icon="⚙️" defaultExpanded={true} delay={0.6}>
                                     <Link to="/admin" onClick={handleLinkClick}>📊 Dashboard</Link>
                                     <Link to="/admin/create" onClick={handleLinkClick}>🧩 Manual Quiz Creator</Link>
-                                    <Link to="/real-time-quiz" onClick={handleLinkClick}>🎮 Real-Time Battles</Link>
+                                    <Link to="/real-time-quiz" onClick={handleLinkClick}>🎮 Host Battles</Link>
                                     <Link to="/admin/report" onClick={handleLinkClick}>📄 Reports</Link>
                                 </NavModule>
 
@@ -265,6 +265,7 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                                 <NavModule title="Social" icon="🤝" defaultExpanded={false} delay={0.8}>
                                     <Link to="/friends" onClick={handleLinkClick}>🤝 Friends</Link>
                                     <Link to="/study-groups" onClick={handleLinkClick}>📚 Study Groups</Link>
+                                    <Link to="/battle-history" onClick={handleLinkClick}>⚔️ Battle History</Link>
                                     <Link to="/study-streak" onClick={handleLinkClick}>🔥 Study Streak</Link>
                                     <Link to="/gamification" onClick={handleLinkClick}>🎮 Challenges & Tournaments</Link>
                                 </NavModule>
@@ -299,6 +300,8 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                                     <Link to="/study-groups" onClick={handleLinkClick}>📚 Study Groups</Link>
                                     <Link to="/study-streak" onClick={handleLinkClick}>🔥 Study Streak</Link>
                                     <Link to="/gamification" onClick={handleLinkClick}>🎮 Challenges & Tournaments</Link>
+                                    <Link to="/real-time-quiz" onClick={handleLinkClick}>🎮 Real-Time Battles</Link>
+                                    <Link to="/battle-history" onClick={handleLinkClick}>⚔️ Battle History</Link>
                                 </NavModule>
 
                                 {/* 4. Support Module */}

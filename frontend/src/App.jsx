@@ -76,6 +76,7 @@ import SpacedRepetition from "./components/SpacedRepetition";
 import AdvancedAnalytics from "./components/AdvancedAnalytics";
 
 const TestPage = lazy(() => import("./pages/TestPage"));
+const BattleHistory = lazy(() => import("./pages/BattleHistory"));
 
 const App = () => {
     const isOnline = useNetworkStatus(); // ✅ Monitor network status
@@ -257,6 +258,7 @@ const App = () => {
                                 <Route path="/study-groups" element={<StudyGroups />} />
                                 <Route path="/gamification" element={<GamificationHub />} />
                                 <Route path="/study-streak" element={<StudyStreakPage />} />
+                                <Route path="/battle-history" element={<BattleHistory />} />
 
                                 {/* Phase 4: Next-Gen Features */}
                                 <Route path="/ai-study-buddy" element={<AIStudyBuddy />} />
