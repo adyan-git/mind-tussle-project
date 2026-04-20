@@ -550,36 +550,54 @@ export const initializeRealTimeQuiz = (server) => {
 
     function endQuiz(room, io) {
         room.status = "finished";
-        const finalLeaderboard = getLeaderboard(room);
+        let finalLeaderboard = [];
 
-        // Update user XP and stats
-        updatePlayerStats(room);
+        try {
+            finalLeaderboard = getLeaderboard(room) || [];
 
-        // Log Real-Time Battle Activity
-        finalLeaderboard.forEach((player, index) => {
-            const rank = index + 1;
-            createActivity(player.playerId, "real_time_battle", {
-                message: `User participated in a Real-Time Battle: ${room.quiz?.title || "Unknown Quiz"}`,
-                roomId: room.id,
-                quizName: room.quiz?.title || "Unknown Quiz",
-                rank: rank,
-                totalPlayers: room.players.size,
-                score: player.score,
-                accuracy: player.accuracy
+            // Update user XP and stats (handled asynchronously)
+            updatePlayerStats(room).catch(err => {
+                console.error('CRITICAL: updatePlayerStats failed', err);
+                logger.error({ message: `updatePlayerStats error in room ${room?.id}`, error: err.message });
             });
-        });
 
-        io.to(room.id).emit("quiz_finished", {
-            leaderboard: finalLeaderboard,
-            totalQuestions: room.quiz.questions.length,
-            duration: Math.round((new Date() - room.startTime) / 1000)
-        });
+            // Log Real-Time Battle Activity
+            if (Array.isArray(finalLeaderboard)) {
+                finalLeaderboard.forEach((player, index) => {
+                    const rank = index + 1;
+                    createActivity(player.playerId, "real_time_battle", {
+                        message: `User participated in a Real-Time Battle: ${room.quiz?.title || "Unknown Quiz"}`,
+                        roomId: room.id,
+                        quizName: room.quiz?.title || "Unknown Quiz",
+                        rank: rank,
+                        totalPlayers: room.players ? room.players.size : 0,
+                        score: player.score,
+                        accuracy: player.accuracy
+                    });
+                });
+            }
+        } catch (error) {
+            console.error('CRITICAL: Quiz end failed but keeping server alive', error);
+            logger.error({ message: `Critical error ending quiz in room ${room?.id}`, error: error.message, stack: error.stack });
+        }
+
+        // Ensure quiz_finished is emitted even if stats update fails
+        try {
+            io.to(room.id).emit("quiz_finished", {
+                leaderboard: finalLeaderboard,
+                totalQuestions: (room.quiz && room.quiz.questions) ? room.quiz.questions.length : 0,
+                duration: room.startTime ? Math.round((new Date() - room.startTime) / 1000) : 0
+            });
+        } catch (emitError) {
+            console.error('CRITICAL: Failed to emit quiz_finished', emitError);
+        }
 
         // Clean up room after 5 minutes
         setTimeout(() => {
-            activeRooms.delete(room.id);
+            if (room && room.id) {
+                activeRooms.delete(room.id);
+            }
         }, 5 * 60 * 1000);
-
     }
 
     function getLeaderboard(room) {
