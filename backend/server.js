@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
+import dns from "dns";
 import passport from "passport";
 import session from "express-session";
 import helmet from "helmet";
@@ -278,7 +279,26 @@ const startServer = async () => {
         }
 
         // Connect to MongoDB first (needed for MongoStore fallback and app data)
-        await mongoose.connect(process.env.MONGO_URI);
+        // If SRV DNS resolution fails on local network, retry once with public DNS resolvers.
+        try {
+            await mongoose.connect(process.env.MONGO_URI);
+        } catch (mongoError) {
+            const isSrvDnsError =
+                mongoError?.message?.includes("querySrv ECONNREFUSED") ||
+                mongoError?.message?.includes("_mongodb._tcp.");
+
+            if (!isSrvDnsError) {
+                throw mongoError;
+            }
+
+            logger.warn({
+                message: "Mongo SRV DNS resolution failed. Retrying with public DNS servers.",
+                error: mongoError.message
+            });
+
+            dns.setServers(["8.8.8.8", "1.1.1.1"]);
+            await mongoose.connect(process.env.MONGO_URI);
+        }
         logger.info("Connected to MongoDB");
         cleanCorruptQuizzes();
 
@@ -361,12 +381,41 @@ const startServer = async () => {
         // Initialize real-time quiz functionality
         initializeRealTimeQuiz(server);
 
-        server.listen(PORT, () => {
-            logger.info(`Server running on port ${PORT}`);
-            logger.info(`Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
-            logger.info("Real-time quiz rooms enabled with Socket.IO");
-            logger.info("AI Study Buddy enabled with Gemini API");
-        });
+        const startHttpServer = (basePort, maxPortAttempts = 5) =>
+            new Promise((resolve, reject) => {
+                let attempts = 0;
+
+                const tryListen = (portToTry) => {
+                    const onError = (err) => {
+                        if (err?.code === "EADDRINUSE" && attempts < maxPortAttempts) {
+                            attempts += 1;
+                            const nextPort = portToTry + 1;
+                            logger.warn({
+                                message: `Port ${portToTry} is in use. Retrying on ${nextPort}.`,
+                                error: err.message
+                            });
+                            setTimeout(() => tryListen(nextPort), 200);
+                            return;
+                        }
+                        reject(err);
+                    };
+
+                    server.once("error", onError);
+                    server.listen(portToTry, () => {
+                        server.removeListener("error", onError);
+                        const boundPort = server.address()?.port || portToTry;
+                        resolve(boundPort);
+                    });
+                };
+
+                tryListen(Number(basePort) || 5000);
+            });
+
+        const runningPort = await startHttpServer(PORT);
+        logger.info(`Server running on port ${runningPort}`);
+        logger.info(`Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
+        logger.info("Real-time quiz rooms enabled with Socket.IO");
+        logger.info("AI Study Buddy enabled with Gemini API");
 
         // ===================== DAILY CHALLENGE RESET SCHEDULER =====================
         // Track execution state to prevent overlapping cron jobs

@@ -25,7 +25,22 @@ const consoleTransport = new winston.transports.Console({
   format: combine(
     colorize({ all: true }),
     align(),
-    printf((info) => `[${info.timestamp}] ${info.level}: ${info.message}`)
+    printf((info) => {
+      const base = `[${info.timestamp}] ${info.level}: ${info.message}`;
+
+      // If the logger call included metadata like { error, stack }, print it.
+      // This is critical during boot failures where we log structured objects.
+      const err = info.error ? `\n  error: ${info.error}` : "";
+      const stack = info.stack ? `\n  stack: ${info.stack}` : "";
+
+      // If message itself is an object (rare but possible), stringify it.
+      const msgObj =
+        info.message && typeof info.message === "object"
+          ? `\n  meta: ${JSON.stringify(info.message)}`
+          : "";
+
+      return `${base}${err}${stack}${msgObj}`;
+    })
   ),
 });
 

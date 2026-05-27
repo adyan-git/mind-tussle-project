@@ -1649,6 +1649,35 @@ export const cleanupEmptyTournaments = async (req, res) => {
 
 // ===================== DAILY CHALLENGE RESET SYSTEM =====================
 
+// Helper to ensure challenge.stats exists and has safe defaults
+const ensureChallengeStats = (challenge) => {
+    if (!challenge.stats) {
+        challenge.stats = {};
+    }
+    if (typeof challenge.stats.totalParticipants !== "number") {
+        challenge.stats.totalParticipants = 0;
+    }
+    if (typeof challenge.stats.completionRate !== "number") {
+        challenge.stats.completionRate = 0;
+    }
+    if (typeof challenge.stats.averageAttempts !== "number") {
+        challenge.stats.averageAttempts = 0;
+    }
+    if (typeof challenge.stats.totalHistoricalCompletions !== "number") {
+        challenge.stats.totalHistoricalCompletions = 0;
+    }
+};
+
+// Helper to normalize participant array fields
+const ensureParticipantArrays = (participant) => {
+    if (!participant.completedQuizzes) {
+        participant.completedQuizzes = [];
+    }
+    if (!participant.quizScores) {
+        participant.quizScores = [];
+    }
+};
+
 // Helper function to reset a single participant if needed
 const resetParticipantIfNeeded = async (challenge, userId, twentyFourHoursAgo) => {
     try {
@@ -1661,6 +1690,8 @@ const resetParticipantIfNeeded = async (challenge, userId, twentyFourHoursAgo) =
         }
 
         const participant = challenge.participants[participantIndex];
+        ensureChallengeStats(challenge);
+        ensureParticipantArrays(participant);
 
         // Check if participant needs reset
         if (participant.completed &&
@@ -1682,9 +1713,7 @@ const resetParticipantIfNeeded = async (challenge, userId, twentyFourHoursAgo) =
             });
 
             // Update historical completion stats
-            if (!challenge.stats.totalHistoricalCompletions) {
-                challenge.stats.totalHistoricalCompletions = 0;
-            }
+            ensureChallengeStats(challenge);
             challenge.stats.totalHistoricalCompletions += 1;
 
             // Reset participant data
@@ -1739,7 +1768,18 @@ export const resetDailyChallenges = async () => {
             "participants.0": { $exists: true } // Only challenges with at least one participant
         }).populate("participants.user");
 
-        logger.info(`Found ${challengesToReset.length} active challenges to check for reset`);
+        const challengeCount = Array.isArray(challengesToReset) ? challengesToReset.length : 0;
+        logger.info(`Found ${challengeCount} active challenges to check for reset`);
+
+        if (!challengeCount) {
+            logger.info("No active challenges with participants found for reset; exiting cleanly.");
+            return {
+                success: true,
+                usersReset: 0,
+                challengesModified: 0,
+                timestamp: now
+            };
+        }
 
         let totalUsersReset = 0;
         let challengesModified = 0;
@@ -1749,16 +1789,24 @@ export const resetDailyChallenges = async () => {
 
         // Process challenges in batches to yield control back to event loop
         const batchSize = 10;
-        for (let batchStart = 0; batchStart < challengesToReset.length; batchStart += batchSize) {
+        for (let batchStart = 0; batchStart < challengeCount; batchStart += batchSize) {
             const batch = challengesToReset.slice(batchStart, batchStart + batchSize);
 
             for (const challenge of batch) {
+                if (!challenge) continue;
+                ensureChallengeStats(challenge);
+
                 let challengeModified = false;
                 let usersResetInChallenge = 0;
 
                 // Reset individual participants who completed more than 24 hours ago
-                for (let i = 0; i < challenge.participants.length; i++) {
-                    const participant = challenge.participants[i];
+                const participants = Array.isArray(challenge.participants) ? challenge.participants : [];
+
+                for (let i = 0; i < participants.length; i++) {
+                    const participant = participants[i];
+
+                    if (!participant) continue;
+                    ensureParticipantArrays(participant);
 
                     if (participant.completed &&
                         participant.completedAt &&
@@ -1779,9 +1827,7 @@ export const resetDailyChallenges = async () => {
                         });
 
                         // Update historical completion stats
-                        if (!challenge.stats.totalHistoricalCompletions) {
-                            challenge.stats.totalHistoricalCompletions = 0;
-                        }
+                        ensureChallengeStats(challenge);
                         challenge.stats.totalHistoricalCompletions += 1;
 
                         // Reset participant data
@@ -1809,9 +1855,11 @@ export const resetDailyChallenges = async () => {
 
                 if (challengeModified) {
                     // Recalculate challenge statistics
-                    const completedParticipants = challenge.participants.filter(p => p.completed).length;
-                    challenge.stats.completionRate = challenge.participants.length > 0
-                        ? (completedParticipants / challenge.participants.length) * 100
+                    const completedParticipants = challenge.participants.filter(p => p && p.completed).length;
+                    const participantCount = challenge.participants.length;
+                    ensureChallengeStats(challenge);
+                    challenge.stats.completionRate = participantCount > 0
+                        ? (completedParticipants / participantCount) * 100
                         : 0;
 
                     await challenge.save();
