@@ -134,6 +134,3 @@ frontend/public/sw.js
 frontend/public/offline.html
 frontend/public/pwa-*.html
 frontend/public/manifest-test.html
-frontend/src/components/PWAInstallTest.jsx
-frontend/src/components/OfflineBanner.jsx
-frontend/src/components/OfflineBanner.css
