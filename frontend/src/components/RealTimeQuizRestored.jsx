@@ -17,6 +17,7 @@ const RealTimeQuizRestored = () => {
     const [gameState, setGameState] = useState("waiting"); // waiting | playing | result
     const [questionState, setQuestionState] = useState(null);
     const [timeLeft, setTimeLeft] = useState(0);
+    const [hasAnswered, setHasAnswered] = useState(false);
     const [leaderboard, setLeaderboard] = useState([]);
     const [liveLeaderboard, setLiveLeaderboard] = useState([]);
     const [selectedQuizId, setSelectedQuizId] = useState("");
@@ -43,12 +44,14 @@ const RealTimeQuizRestored = () => {
         s.on("new_question", (payload) => {
             setQuestionState(payload);
             setTimeLeft(payload.timeLimit || 30);
+            setHasAnswered(false);
             setGameState("playing");
         });
         s.on("leaderboard_update", (payload) => setLiveLeaderboard(payload.leaderboard || []));
         s.on("question_results", (payload) => setLeaderboard(payload.leaderboard || []));
         s.on("quiz_finished", (payload) => {
             setLeaderboard(payload.leaderboard || []);
+            setHasAnswered(false);
             setGameState("result");
         });
         setSocket(s);
@@ -89,15 +92,16 @@ const RealTimeQuizRestored = () => {
     };
 
     const submitAnswer = (index) => {
-        if (!socket || !questionState) return;
+        if (!socket || !questionState || hasAnswered) return;
         const timeLimit = questionState.timeLimit || 30;
         const timeSpent = timeLimit - timeLeft;
+        setHasAnswered(true);
         socket.emit("submit_answer", { answer: index, timeSpent });
     };
 
     return (
         <div className="rt-restored-page">
-            <h1>{isAdmin ? "Admin Suite - Host Battles" : "Real-Time Battles"}</h1>
+            <h1>{isAdmin ? "Admin - Host Battles" : "Real-Time Battles"}</h1>
 
             {!room && (
                 <>
@@ -139,40 +143,43 @@ const RealTimeQuizRestored = () => {
             )}
 
             {gameState === "playing" && questionState && (
-                <div className="playing-container" style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                    <div className="rt-card" style={{ flex: '2 1 300px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="playing-container">
+                    <div className="rt-card battle-main-card">
+                        <div className="battle-header">
                             <h2>Question {questionState.question?.questionNumber} of {questionState.question?.totalQuestions}</h2>
-                            <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: timeLeft <= 3 ? '#ff4d4d' : 'white' }}>
+                            <div className={`battle-timer ${timeLeft <= 3 ? "critical" : ""}`}>
                                 ⏱️ {timeLeft}s
                             </div>
                         </div>
-                        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden', margin: '10px 0 20px 0' }}>
-                            <div style={{
-                                height: '100%',
-                                width: `${(timeLeft / (questionState.timeLimit || 30)) * 100}%`,
-                                backgroundColor: timeLeft <= 3 ? '#ff4d4d' : '#4CAF50',
-                                transition: 'width 1s linear, background-color 0.3s ease'
-                            }}></div>
+                        <div className="battle-progress-track">
+                            <div
+                                className={`battle-progress-fill ${timeLeft <= 3 ? "critical" : ""}`}
+                                style={{ width: `${(timeLeft / (questionState.timeLimit || 30)) * 100}%` }}
+                            />
                         </div>
                         <h3>{questionState.question?.question}</h3>
-                        <div className="options-grid" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
+                        <div className="options-grid">
                             {questionState.question?.options?.map((option, i) => (
-                                <button key={`${option}-${i}`} type="button" onClick={() => submitAnswer(i)}>
+                                <button
+                                    key={`${option}-${i}`}
+                                    type="button"
+                                    onClick={() => submitAnswer(i)}
+                                    disabled={hasAnswered}
+                                >
                                     {String.fromCharCode(65 + i)}. {option}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    <div className="rt-card live-leaderboard" style={{ flex: '1 1 200px', maxHeight: '400px', overflowY: 'auto' }}>
+                    <div className="rt-card live-leaderboard">
                         <h3>Live Rankings</h3>
-                        {liveLeaderboard.length === 0 && <p style={{ fontSize: '0.9rem', color: '#888' }}>No scores this round...</p>}
-                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                        {liveLeaderboard.length === 0 && <p className="empty-live-board">No scores this round...</p>}
+                        <ul className="live-rank-list">
                             {liveLeaderboard.map((p, index) => (
-                                <li key={p.playerId} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <span><strong style={{ opacity: 0.7 }}>#{index + 1}</strong> {p.playerName}</span>
-                                    <span style={{ fontWeight: 'bold', color: '#4CAF50' }}>{p.score} pts</span>
+                                <li key={p.playerId} className={`live-rank-item ${p.playerId === currentUserId ? "self" : "opponent"}`}>
+                                    <span><strong className="rank-num">#{index + 1}</strong> {p.playerName}</span>
+                                    <span className="rank-score">{p.score} pts</span>
                                 </li>
                             ))}
                         </ul>
@@ -190,21 +197,11 @@ const RealTimeQuizRestored = () => {
                         }
                         `}
                     </style>
-                    <div
-                        className="rt-card"
-                        style={{
-                            background: 'rgba(20, 20, 30, 0.8)',
-                            backdropFilter: 'blur(15px)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            maxWidth: '800px',
-                            margin: '0 auto',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-                        }}
-                    >
-                        <h2 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '2.5rem', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                    <div className="rt-card final-board-card">
+                        <h2 className="final-board-title">
                             🏆 Final Leaderboard 🏆
                         </h2>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        <ul className="final-rank-list">
                             {leaderboard.map((p, index) => {
                                 let icon = '';
                                 if (index === 0) icon = '🥇';
@@ -217,34 +214,23 @@ const RealTimeQuizRestored = () => {
                                 return (
                                     <li
                                         key={p.playerId}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '15px 25px',
-                                            background: isMe ? 'rgba(57, 255, 20, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-                                            border: isMe ? '1px solid #39ff14' : '1px solid rgba(255,255,255,0.05)',
-                                            borderRadius: '16px',
-                                            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                                            animation: `slideUpFade 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards`,
-                            animationDelay: `${index * 0.15}s`,
-                            opacity: 0,
-                                        }}
+                                        className={`final-rank-item ${isMe ? "self" : "opponent"}`}
+                                        style={{ animationDelay: `${index * 0.15}s` }}
                                     >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1 }}>
-                                <span style={{ fontSize: '2rem', width: '45px', textAlign: 'center' }}>{icon}</span>
-                                <span style={{ fontSize: '1.3rem', fontWeight: isMe ? 'bold' : 'normal', color: isMe ? '#39ff14' : '#fff' }}>
+                            <div className="final-rank-left">
+                                <span className="final-rank-icon">{icon}</span>
+                                <span className="final-rank-name">
                                     {p.playerName} {isMe && '(You)'}
                                 </span>
                             </div>
-                            <div style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                    <span style={{ fontSize: '0.8rem', color: '#aaa', textTransform: 'uppercase', letterSpacing: '1px' }}>Accuracy</span>
-                                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{p.accuracy ?? 0}%</span>
+                            <div className="final-rank-right">
+                                <div className="metric-block">
+                                    <span className="metric-label">Accuracy</span>
+                                    <span className="metric-value">{p.accuracy ?? 0}%</span>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '100px' }}>
-                                    <span style={{ fontSize: '0.8rem', color: '#aaa', textTransform: 'uppercase', letterSpacing: '1px' }}>Points</span>
-                                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ffd700', textShadow: '0 0 10px rgba(255,215,0,0.3)' }}>{p.score}</span>
+                                <div className="metric-block points">
+                                    <span className="metric-label">Points</span>
+                                    <span className="metric-value">{p.score}</span>
                                 </div>
                             </div>
                         </li>

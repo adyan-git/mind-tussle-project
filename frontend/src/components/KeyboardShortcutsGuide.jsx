@@ -23,14 +23,12 @@ const KeyboardShortcutsGuide = () => {
             shortcuts: [
                 { keys: [`${modifierKey}`, 'F'], description: 'Focus search input' },
                 { keys: [`${modifierKey}`, 'Z'], description: 'Undo last answer (in quiz)' },
-                { keys: ['Space'], description: 'Pause/Resume timer (in quiz)' },
             ]
         },
         {
             category: 'Quiz Taking',
             shortcuts: [
                 { keys: ['Escape'], description: 'Exit fullscreen mode' },
-                { keys: ['Space'], description: 'Pause/Resume quiz timer' },
                 { keys: [`${modifierKey}`, 'Z'], description: 'Undo last answer' },
                 { keys: ['ArrowLeft'], description: 'Previous question' },
                 { keys: ['ArrowRight'], description: 'Next question' },

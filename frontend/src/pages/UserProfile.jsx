@@ -19,23 +19,7 @@ const UserProfile = () => {
 
     // Profile form state
     const [name, setName] = useState("");
-    const [bio, setBio] = useState("");
     const [avatarUrl, setAvatarUrl] = useState("");
-
-    // Preferences form state
-    const [preferences, setPreferences] = useState({
-        preferredDifficulty: "medium",
-        studyTime: "afternoon",
-        favoriteCategories: []
-    });
-
-    // Privacy form state
-    const [privacy, setPrivacy] = useState({
-        profileVisibility: "public",
-        showOnlineStatus: true,
-        allowFriendRequests: true,
-        showProgressToFriends: true
-    });
 
     // Security form state
     const [passwordForm, setPasswordForm] = useState({
@@ -64,31 +48,7 @@ const UserProfile = () => {
             setProfile(profileData);
             setUser(userData);
             setName(profileData.name || "");
-            setBio(profileData.bio || "");
             setAvatarUrl(profileData.avatarUrl || "");
-
-            if (profileData.preferences) {
-                setPreferences({
-                    preferredDifficulty: profileData.preferences.preferredDifficulty || "medium",
-                    studyTime: profileData.preferences.studyTime || "afternoon",
-                    favoriteCategories: profileData.preferences.favoriteCategories || []
-                });
-            }
-
-            if (profileData.social?.privacy) {
-                setPrivacy({
-                    profileVisibility: profileData.social.privacy.profileVisibility || "public",
-                    showOnlineStatus: profileData.social.privacy.showOnlineStatus !== undefined
-                        ? profileData.social.privacy.showOnlineStatus
-                        : true,
-                    allowFriendRequests: profileData.social.privacy.allowFriendRequests !== undefined
-                        ? profileData.social.privacy.allowFriendRequests
-                        : true,
-                    showProgressToFriends: profileData.social.privacy.showProgressToFriends !== undefined
-                        ? profileData.social.privacy.showProgressToFriends
-                        : true
-                });
-            }
         } catch (error) {
             console.error("Error fetching profile:", error);
             showError("Failed to load profile");
@@ -106,7 +66,6 @@ const UserProfile = () => {
         try {
             await axios.put("/api/users/profile", {
                 name,
-                bio,
                 avatarUrl
             });
             showSuccess("Profile updated successfully");
@@ -114,38 +73,6 @@ const UserProfile = () => {
         } catch (error) {
             console.error("Error updating profile:", error);
             showError(error.response?.data?.message || "Failed to update profile");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleSavePreferences = async () => {
-        setSaving(true);
-        try {
-            await axios.put("/api/users/preferences", {
-                preferredDifficulty: preferences.preferredDifficulty,
-                studyTime: preferences.studyTime
-            });
-            showSuccess("Preferences updated successfully");
-            // Force refresh profile data by clearing any local cache and refetching
-            await fetchProfile();
-        } catch (error) {
-            console.error("Error updating preferences:", error);
-            showError(error.response?.data?.message || "Failed to update preferences");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const handleSavePrivacy = async () => {
-        setSaving(true);
-        try {
-            await axios.put("/api/users/privacy", privacy);
-            showSuccess("Privacy settings updated successfully");
-            fetchProfile();
-        } catch (error) {
-            console.error("Error updating privacy:", error);
-            showError(error.response?.data?.message || "Failed to update privacy settings");
         } finally {
             setSaving(false);
         }
@@ -213,8 +140,6 @@ const UserProfile = () => {
 
     const tabs = [
         { id: "profile", label: "Profile", icon: "👤" },
-        { id: "preferences", label: "Preferences", icon: "⚙️" },
-        { id: "privacy", label: "Privacy", icon: "🔒" },
         { id: "security", label: "Security", icon: "🛡️" },
         { id: "account", label: "Account", icon: "📋" }
     ];
@@ -329,15 +254,6 @@ const UserProfile = () => {
                             />
                         </div>
                         <div className="form-group">
-                            <label>Bio</label>
-                            <textarea
-                                value={bio}
-                                onChange={(e) => setBio(e.target.value)}
-                                placeholder="Tell us about yourself..."
-                                rows={4}
-                            />
-                        </div>
-                        <div className="form-group">
                             <label>Avatar URL</label>
                             <input
                                 type="url"
@@ -352,122 +268,6 @@ const UserProfile = () => {
                             disabled={saving}
                         >
                             {saving ? "Saving..." : "Save Profile"}
-                        </button>
-                    </motion.div>
-                )}
-
-                {activeTab === "preferences" && (
-                    <motion.div
-                        className="profile-tab-content"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                    >
-                        <h2>Learning Preferences</h2>
-                        <div className="form-group">
-                            <label>Preferred Difficulty</label>
-                            <select
-                                value={preferences.preferredDifficulty}
-                                onChange={(e) => setPreferences(prev => ({
-                                    ...prev,
-                                    preferredDifficulty: e.target.value
-                                }))}
-                            >
-                                <option value="easy">Easy</option>
-                                <option value="medium">Medium</option>
-                                <option value="hard">Hard</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label>Preferred Study Time</label>
-                            <select
-                                value={preferences.studyTime}
-                                onChange={(e) => setPreferences(prev => ({
-                                    ...prev,
-                                    studyTime: e.target.value
-                                }))}
-                            >
-                                <option value="morning">Morning</option>
-                                <option value="afternoon">Afternoon</option>
-                                <option value="evening">Evening</option>
-                                <option value="night">Night</option>
-                            </select>
-                        </div>
-                        <button
-                            className="save-btn"
-                            onClick={handleSavePreferences}
-                            disabled={saving}
-                        >
-                            {saving ? "Saving..." : "Save Preferences"}
-                        </button>
-                    </motion.div>
-                )}
-
-                {activeTab === "privacy" && (
-                    <motion.div
-                        className="profile-tab-content"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                    >
-                        <h2>Privacy Settings</h2>
-                        <div className="form-group">
-                            <label>Profile Visibility</label>
-                            <select
-                                value={privacy.profileVisibility}
-                                onChange={(e) => setPrivacy(prev => ({
-                                    ...prev,
-                                    profileVisibility: e.target.value
-                                }))}
-                            >
-                                <option value="public">Public</option>
-                                <option value="friends">Friends Only</option>
-                                <option value="private">Private</option>
-                            </select>
-                        </div>
-                        <div className="form-group checkbox-group">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={privacy.showOnlineStatus}
-                                    onChange={(e) => setPrivacy(prev => ({
-                                        ...prev,
-                                        showOnlineStatus: e.target.checked
-                                    }))}
-                                />
-                                Show Online Status
-                            </label>
-                        </div>
-                        <div className="form-group checkbox-group">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={privacy.allowFriendRequests}
-                                    onChange={(e) => setPrivacy(prev => ({
-                                        ...prev,
-                                        allowFriendRequests: e.target.checked
-                                    }))}
-                                />
-                                Allow Friend Requests
-                            </label>
-                        </div>
-                        <div className="form-group checkbox-group">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={privacy.showProgressToFriends}
-                                    onChange={(e) => setPrivacy(prev => ({
-                                        ...prev,
-                                        showProgressToFriends: e.target.checked
-                                    }))}
-                                />
-                                Show Progress to Friends
-                            </label>
-                        </div>
-                        <button
-                            className="save-btn"
-                            onClick={handleSavePrivacy}
-                            disabled={saving}
-                        >
-                            {saving ? "Saving..." : "Save Privacy Settings"}
                         </button>
                     </motion.div>
                 )}
@@ -532,20 +332,7 @@ const UserProfile = () => {
                         animate={{ opacity: 1, x: 0 }}
                     >
                         <h2>Account Settings</h2>
-                        <div className="account-section">
-                            <h3>Theme Preferences</h3>
-                            <p className="section-description">
-                                Current theme: {user?.selectedTheme || "Default"}
-                            </p>
-                            <button
-                                className="secondary-btn"
-                                onClick={() => navigate("/themes")}
-                            >
-                                Manage Themes →
-                            </button>
-                        </div>
-
-                        <div className="account-section danger-section">
+<div className="account-section danger-section">
                             <h3>Danger Zone</h3>
                             <p className="section-description">
                                 Once you delete your account, there is no going back. Please be certain.

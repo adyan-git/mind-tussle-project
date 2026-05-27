@@ -229,14 +229,12 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                             </button>
                         )}
 
-<Link to={user?.role === "admin" ? "/admin" : "/"} id="title" className="flex items-center gap-3">
-    
+<Link to={user?.role === "admin" ? "/admin" : "/"} id="title" className="sidebar-logo-link">
     <img 
         src={logo} 
         alt="MindTussle Logo" 
-        style={{ width: '40px', height: '40px', objectFit: 'contain' }} 
+        className="sidebar-logo-icon"
     />
-    <h2 style={{ margin: 0 }}>MindTussle</h2>
 </Link>
                     </motion.div>
 
@@ -249,25 +247,18 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                         {user?.role === "admin" && (
                             <>
                                 {/* 1. Admin Module */}
-                                <NavModule title="Admin Suite" icon="⚙️" defaultExpanded={true} delay={0.6}>
+                                <NavModule title="Admin" icon="⚙️" defaultExpanded={true} delay={0.6}>
                                     <Link to="/admin" onClick={handleLinkClick}>📊 Dashboard</Link>
-                                    <Link to="/admin/create" onClick={handleLinkClick}>🧩 Manual Quiz Creator</Link>
+                                    <Link to="/admin/create" onClick={handleLinkClick}>🧩 Quiz Creator</Link>
                                     <Link to="/real-time-quiz" onClick={handleLinkClick}>🎮 Host Battles</Link>
+                                    <Link to="/leaderboard" onClick={handleLinkClick}>🏆 Leaderboard</Link>
                                     <Link to="/admin/report" onClick={handleLinkClick}>📄 Reports</Link>
                                 </NavModule>
 
-                                {/* 2. Learning Module */}
-                                <NavModule title="Learning" icon="📚" defaultExpanded={true} delay={0.7}>
-                                    <Link to="/leaderboard" onClick={handleLinkClick}>🏆 LeaderBoard</Link>
-                                </NavModule>
-
                                 {/* 3. Social Module */}
-                                <NavModule title="Social" icon="🤝" defaultExpanded={false} delay={0.8}>
-                                    <Link to="/friends" onClick={handleLinkClick}>🤝 Friends</Link>
-                                    <Link to="/study-groups" onClick={handleLinkClick}>📚 Study Groups</Link>
-                                    <Link to="/battle-history" onClick={handleLinkClick}>⚔️ Battle History</Link>
-                                    <Link to="/study-streak" onClick={handleLinkClick}>🔥 Study Streak</Link>
-                                    <Link to="/gamification" onClick={handleLinkClick}>🎮 Challenges & Tournaments</Link>
+                                <NavModule title="Compete" icon="⚔️" defaultExpanded={false} delay={0.8}>
+                                    <Link to="/battle-history" onClick={handleLinkClick}>⚔️ Battles</Link>
+                                    <Link to="/gamification" onClick={handleLinkClick}>🎮 Challenges</Link>
                                 </NavModule>
                             </>
                         )}
@@ -277,10 +268,10 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                         {user?.role === "user" && (
                             <>
                                 {/* 1. Personal Module */}
-                                <NavModule title="Personal" icon="👤" defaultExpanded={true} delay={0.6}>
+                                <NavModule title="My Account" icon="👤" defaultExpanded={true} delay={0.6}>
                                     <Link to="/" onClick={handleLinkClick}>📊 Dashboard</Link>
-                                    <Link to="/profile" onClick={handleLinkClick}>👤 Profile & Settings</Link>
-                                    <Link to="/activity" onClick={handleLinkClick}>📝 Activity Feed</Link>
+                                    <Link to="/profile" onClick={handleLinkClick}>⚙️ Settings</Link>
+                                    <Link to="/activity" onClick={handleLinkClick}>📝 Activity</Link>
                                 </NavModule>
 
                                 {/* 2. Learning Module */}
@@ -289,27 +280,16 @@ const Sidebar = ({ isOpen = false, onClose }) => {
                                     <Link to="/bookmarks" onClick={handleLinkClick}>⭐ Bookmarks</Link>
                                     <Link to="/user/report" onClick={handleLinkClick}>📄 Reports</Link>
                                     <Link to="/achievements" onClick={handleLinkClick}>🏆 Achievements</Link>
-                                    <Link to="/leaderboard" onClick={handleLinkClick}>🏆 LeaderBoard</Link>
-                                    <Link to="/xp-leaderboard" onClick={handleLinkClick}>🏆 XP LeaderBoard</Link>
-                                    <Link to="/analytics" onClick={handleLinkClick}>📝 User Analytics</Link>
+                                    <Link to="/leaderboard" onClick={handleLinkClick}>🏆 Leaderboard</Link>
+                                    <Link to="/xp-leaderboard" onClick={handleLinkClick}>⭐ XP Board</Link>
                                 </NavModule>
 
                                 {/* 3. Social Module */}
-                                <NavModule title="Social" icon="🤝" defaultExpanded={false} delay={0.8}>
-                                    <Link to="/friends" onClick={handleLinkClick}>🤝 Friends</Link>
-                                    <Link to="/study-groups" onClick={handleLinkClick}>📚 Study Groups</Link>
-                                    <Link to="/study-streak" onClick={handleLinkClick}>🔥 Study Streak</Link>
-                                    <Link to="/gamification" onClick={handleLinkClick}>🎮 Challenges & Tournaments</Link>
-                                    <Link to="/real-time-quiz" onClick={handleLinkClick}>🎮 Real-Time Battles</Link>
-                                    <Link to="/battle-history" onClick={handleLinkClick}>⚔️ Battle History</Link>
+                                <NavModule title="Compete" icon="⚔️" defaultExpanded={false} delay={0.8}>
+                                    <Link to="/gamification" onClick={handleLinkClick}>🎮 Challenges</Link>
+                                    <Link to="/real-time-quiz" onClick={handleLinkClick}>⚡ Live Battles</Link>
+                                    <Link to="/battle-history" onClick={handleLinkClick}>⚔️ Battles</Link>
                                 </NavModule>
-
-                                {/* 4. Support Module */}
-                                <NavModule title="Support" icon="📄" defaultExpanded={false} delay={0.9}>
-                                    <Link to="/help-guide" onClick={handleLinkClick}>📚 Help Guide</Link>
-                                </NavModule>
-
-
                             </>
                         )}
                     </motion.nav>

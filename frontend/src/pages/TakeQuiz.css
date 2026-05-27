@@ -3592,3 +3592,83 @@ body.quiz-fullscreen .quiz-content .navigation-buttons {
     cursor: pointer;
     text-decoration: underline;
 }
+
+/* Premium obsidian gameplay cascade overrides */
+.quiz-container {
+    background: rgba(15, 12, 29, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), var(--shadow-xl);
+}
+
+.question-box {
+    background: rgba(20, 17, 37, 0.72);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: 1.2rem;
+}
+
+.quiz-container .question {
+    background: rgba(20, 17, 37, 0.86);
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: inset 0 0 12px rgba(168, 85, 247, 0.12);
+}
+
+.quiz-container .options .option-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    color: var(--text-color);
+}
+
+.quiz-container .options .option-btn:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+}
+
+.quiz-container .options .option-btn.selected {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.35) 0%, rgba(56, 189, 248, 0.3) 100%) !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.35) !important;
+}
+
+.review-option.correct-answer {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.24), rgba(16, 185, 129, 0.18));
+    border-color: rgba(34, 197, 94, 0.5);
+    box-shadow: 0 0 14px rgba(34, 197, 94, 0.25);
+}
+
+.review-option.wrong-answer {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(239, 68, 68, 0.16));
+    border-color: rgba(244, 63, 94, 0.45);
+    box-shadow: 0 0 14px rgba(244, 63, 94, 0.24);
+}
+
+.timer-progress-track {
+    width: min(520px, 90vw);
+    height: 10px;
+    margin: 0 auto 0.75rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.timer-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22d3ee 0%, #a855f7 50%, #ec4899 100%);
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.45);
+    transition: width 1s linear;
+    animation: timerGradientFlow 3.2s linear infinite;
+    background-size: 200% 100%;
+}
+
+@keyframes timerGradientFlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}

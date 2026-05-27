@@ -50,13 +50,13 @@ const HelpGuide = () => {
             title: 'Website Overview',
             icon: '🏠',
             content: {
-                description: 'MindTussle is your ultimate learning companion! Think of it as your personal study buddy that helps you learn through interactive quizzes, track your progress, and compete with friends. Our platform combines gamification, AI-powered insights, and social learning to make education engaging and effective.',
+                description: 'MindTussle is a high-performance learning platform built for focused quiz practice, measurable progress, and real-time competition. It combines gamification, AI insights, and social learning in a single premium dark interface.',
                 features: [
                     '📚 Take unlimited quizzes on various topics',
                     '📊 Advanced analytics and progress tracking',
                     '🏆 Comprehensive achievement system with XP rewards',
                     '👥 Social features: friends, challenges, and leaderboards',
-                    '🎨 Beautiful themes and customizable interface',
+                    '🌌 Premium obsidian interface optimized for focus',
                     '📱 Progressive Web App (PWA) - works offline',
                     '🤖 AI-powered study recommendations',
                     '📈 Learning paths and personalized content',
@@ -84,7 +84,7 @@ const HelpGuide = () => {
                             'Compete on leaderboards',
                             'Basic analytics',
                             'Social features (friends, challenges)',
-                            'Customize themes'
+                            'Focus mode interface'
                         ],
                         limitations: [
                             'Cannot create your own quizzes',
@@ -135,7 +135,7 @@ const HelpGuide = () => {
                     {
                         step: 1,
                         title: 'Sign Up & Login',
-                        description: 'Create your account or login with Google. Choose your role (Simple, Admin Suite, or Admin).'
+                        description: 'Create your account or login with Google, then start in your role-based workspace.'
                     },
                     {
                         step: 2,
@@ -234,8 +234,8 @@ const HelpGuide = () => {
                         description: 'Participate in tournaments and special events to win prizes and recognition.'
                     },
                     {
-                        name: '🎨 Themes',
-                        description: 'Customize the look and feel of MindTussle with beautiful themes and color schemes.'
+                        name: '🌌 Premium Interface',
+                        description: 'A unified obsidian glassmorphism experience designed for readability, speed, and low visual fatigue.'
                     },
                     {
                         name: '📱 Mobile App',

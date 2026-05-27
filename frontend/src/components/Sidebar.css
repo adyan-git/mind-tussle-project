@@ -5,9 +5,11 @@
     left: 0;
     width: 280px;
     height: 100vh;
-    background: rgba(15, 23, 42, 0.6);
-    backdrop-filter: blur(16px);
-    border-right: 1px solid var(--glass-border);
+    background: linear-gradient(180deg, rgba(15, 12, 29, 0.88) 0%, rgba(20, 17, 37, 0.82) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset -1px 0 0 rgba(168, 85, 247, 0.15), var(--shadow-xl);
     padding: 2rem 0;
     transition: transform 0.3s cubic-bezier(0.77,0,0.175,1), all 0.3s ease;
     z-index: 1000;
@@ -405,33 +407,22 @@ body.quiz-fullscreen .sidebar-toggle {
     transform: translateX(0);
 }
 
-/* ✅ Enhanced Sidebar Title */
-#title h2 {
-    color: var(--color-title);
-    font-size: 1.3rem;
-    font-weight: 700;
-    margin: 0 0 var(--space-sm) 0;
-    padding-bottom: var(--space-xs);
-    border-bottom: 2px solid transparent;
-    background: var(--gradient-primary);
-    border-image: var(--gradient-primary) 1;
-    width: calc(100% - 12px);
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    position: relative;
+/* Centered sidebar logo */
+#title.sidebar-logo-link {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto var(--space-md) auto;
+    text-decoration: none;
 }
 
-#title h2::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: var(--gradient-primary);
-    border-radius: var(--radius-sm);
+#title .sidebar-logo-icon {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.35));
 }
 
 /* ✅ Enhanced Navigation Links */
@@ -867,10 +858,14 @@ body.quiz-fullscreen .sidebar-toggle {
         transform: rotate(90deg);
     }
 
-    #title h2 {
-        font-size: 1.5rem;
+    #title.sidebar-logo-link {
         margin-top: var(--space-lg);
         margin-bottom: var(--space-xl);
+    }
+
+    #title .sidebar-logo-icon {
+        width: 46px;
+        height: 46px;
     }
 
     .sidebar a {
@@ -901,8 +896,9 @@ body.quiz-fullscreen .sidebar-toggle {
         padding: var(--space-lg) var(--space-md);
     }
 
-    #title h2 {
-        font-size: 1.3rem;
+    #title .sidebar-logo-icon {
+        width: 42px;
+        height: 42px;
     }
 
     .sidebar a {
@@ -933,9 +929,9 @@ body.quiz-fullscreen .sidebar-toggle {
         padding: var(--space-md) var(--space-sm);
     }
 
-    #title h2 {
-        font-size: 1.2rem;
-        margin-bottom: var(--space-lg);
+    #title .sidebar-logo-icon {
+        width: 38px;
+        height: 38px;
     }
 
     .sidebar a {

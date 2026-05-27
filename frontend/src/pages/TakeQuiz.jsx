@@ -25,8 +25,6 @@ const TakeQuiz = () => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [timeLeft, setTimeLeft] = useState(null);
-    const [isTimerPaused, setIsTimerPaused] = useState(false);
-    const [pausedAt, setPausedAt] = useState(null); // Track when timer was paused
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [showResultModal, setShowResultModal] = useState(false);
@@ -166,30 +164,6 @@ const TakeQuiz = () => {
         }
     }, [currentQuestion, recordAnswerTime]);
 
-    // Timer pause/resume functions (must be defined before useKeyboardShortcuts)
-    const handlePauseTimer = useCallback(() => {
-        if (!isTimerPaused && timeLeft > 0 && !isQuizCompleted && !hasAutoSubmitted && !showResultModal) {
-            setIsTimerPaused(true);
-            setPausedAt(Date.now());
-        }
-    }, [isTimerPaused, timeLeft, isQuizCompleted, hasAutoSubmitted, showResultModal]);
-
-    const handleResumeTimer = useCallback(() => {
-        if (isTimerPaused && pausedAt) {
-            setIsTimerPaused(false);
-            setPausedAt(null);
-        }
-    }, [isTimerPaused, pausedAt]);
-
-    const toggleTimerPause = useCallback(() => {
-        if (isTimerPaused) {
-            handleResumeTimer();
-        } else {
-            handlePauseTimer();
-        }
-    }, [isTimerPaused, handlePauseTimer, handleResumeTimer]);
-
-
     // Keyboard shortcuts for quiz navigation
     useKeyboardShortcuts({
         'Escape': (e) => {
@@ -254,19 +228,7 @@ const TakeQuiz = () => {
                 handleNext();
             }
         },
-        'Space': (e) => {
-            // Pause/Resume timer with Space bar (only when not in input fields)
-            const target = e.target;
-            const isInputElement = target.tagName === 'INPUT' ||
-                                  target.tagName === 'TEXTAREA' ||
-                                  target.isContentEditable;
-
-            if (!isInputElement && !showResultModal && !showReviewModal && !isQuizCompleted && !hasAutoSubmitted && timeLeft > 0) {
-                e.preventDefault();
-                toggleTimerPause();
-            }
-        },
-    }, [showReviewModal, showResultModal, currentQuestion, quiz, exitFullScreen, leaveFullscreenOnly, navigate, hasAutoSubmitted, handlePrev, handleNext, toggleTimerPause, isQuizCompleted, timeLeft]);
+    }, [showReviewModal, showResultModal, currentQuestion, quiz, exitFullScreen, leaveFullscreenOnly, navigate, hasAutoSubmitted, handlePrev, handleNext]);
 
     const optionLetters = useMemo(() => ["A", "B", "C", "D"], []);
     const currentQ = useMemo(() => quiz?.questions?.[currentQuestion], [quiz, currentQuestion]);
@@ -926,8 +888,8 @@ const TakeQuiz = () => {
             return;
         }
 
-        // Stop timer if quiz is completed, submitted, result modal is showing, or timer is paused
-        if (isQuizCompleted || hasAutoSubmitted || showResultModal || isSubmittingRef.current || isTimerPaused) {
+        // Stop timer if quiz is completed, submitted, or result modal is showing
+        if (isQuizCompleted || hasAutoSubmitted || showResultModal || isSubmittingRef.current) {
             return;
         }
 
@@ -948,7 +910,6 @@ const TakeQuiz = () => {
         isQuizCompleted,
         hasAutoSubmitted,
         showResultModal,
-        isTimerPaused,
         awaitingFullscreenStart,
     ]);
 
@@ -1023,6 +984,7 @@ const TakeQuiz = () => {
         showResultModal && finalScore != null && finalScore > 0 && score != null
             ? Math.min(100, Math.max(0, Math.round((score / finalScore) * 100)))
             : 0;
+    const timerPercent = Math.max(0, Math.min(100, (timeLeft / ((quiz?.duration || 1) * 60)) * 100));
 
     return (
         <div className="quiz-container">
@@ -1071,19 +1033,12 @@ const TakeQuiz = () => {
             <h1>{quiz.title}</h1>
             {!isQuizCompleted && !showResultModal && (
                 <div className="timer-container">
-                    <div className={`timer ${isTimerPaused ? 'paused' : ''}`}>
-                        {isTimerPaused && <span className="paused-indicator">⏸️ PAUSED</span>}
+                    <div className="timer">
                         <span>Time Left: {formatTime(timeLeft)}</span>
                     </div>
-                    <button
-                        className={`timer-control-btn ${isTimerPaused ? 'resume' : 'pause'}`}
-                        onClick={toggleTimerPause}
-                        aria-label={isTimerPaused ? "Resume timer (Space)" : "Pause timer (Space)"}
-                        title={isTimerPaused ? "Resume Timer (Space)" : "Pause Timer (Space)"}
-                        disabled={isQuizCompleted || hasAutoSubmitted || showResultModal}
-                    >
-                        {isTimerPaused ? '▶️ Resume' : '⏸️ Pause'}
-                    </button>
+                    <div className="timer-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(timerPercent)}>
+                        <div className="timer-progress-fill" style={{ width: `${timerPercent}%` }} />
+                    </div>
                 </div>
             )}
 
@@ -1093,7 +1048,7 @@ const TakeQuiz = () => {
                     {currentQ.options.map((option, i) => (
                         <button
                             key={`q${currentQuestion}-opt${i}`}
-                            className={answers[currentQuestion] === i ? "selected" : ""}
+                            className={`option-btn ${answers[currentQuestion] === i ? "selected" : ""}`}
                             onClick={() => handleAnswer(i)}
                             aria-label={`Option ${optionLetters[i]}: ${option}`}
                             aria-pressed={answers[currentQuestion] === i}

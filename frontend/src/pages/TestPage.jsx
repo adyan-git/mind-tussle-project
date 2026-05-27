@@ -22,8 +22,8 @@ const TestPage = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <h1>🧪 Test New Features</h1>
-        <p>Click on any feature below to test the new components</p>
+        <h1>🧪 Feature Validation Hub</h1>
+        <p>Use this page to validate premium modules and gameplay flows.</p>
       </motion.div>
 
       <div className="test-grid">
@@ -73,36 +73,7 @@ const TestPage = () => {
           </Link>
         </motion.div>
 
-        <motion.div
-          className="test-card"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          whileHover={{ scale: 1.05 }}
-        >
-          <div className="test-link">
-            <div className="test-icon" aria-hidden="true">🎨</div>
-            <h3>Advanced Theme Selector</h3>
-            <p>Live preview themes with categories and search</p>
-            <span className="test-status new" aria-label="New feature">NEW</span>
-            <div className="test-note">Available on Home page</div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="test-card"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          whileHover={{ scale: 1.05 }}
-        >
-          <Link to="/themes" className="test-link" aria-label="Navigate to Original Theme Page">
-            <div className="test-icon" aria-hidden="true">🌈</div>
-            <h3>Original Theme Page</h3>
-            <p>Your existing theme selector page</p>
-            <span className="test-status existing" aria-label="Existing feature">EXISTING</span>
-          </Link>
-        </motion.div>
+        
 
         <motion.div
           className="test-card"
@@ -236,7 +207,7 @@ const TestPage = () => {
           <Link to="/" className="test-link" aria-label="Navigate to Home Dashboard">
             <div className="test-icon" aria-hidden="true">🏠</div>
             <h3>Home Dashboard</h3>
-            <p>Your beautiful existing home page with new theme selector</p>
+            <p>Your premium dashboard with the unified obsidian design system</p>
             <span className="test-status enhanced" aria-label="Enhanced feature">ENHANCED</span>
           </Link>
         </motion.div>
@@ -260,7 +231,7 @@ const TestPage = () => {
           <li><strong>Intelligence Dashboard:</strong> AI-powered insights with smart recommendations and learning analytics (Admin Suite)</li>
           <li><strong>Enhanced Dashboard:</strong> Beautiful data visualizations with Chart.js</li>
           <li><strong>Achievement System:</strong> Gamified learning with unlockable badges and milestones</li>
-          <li><strong>Advanced Theme Selector:</strong> Live preview with categories and search functionality</li>
+          <li><strong>Premium UI Baseline:</strong> Unified dark glassmorphism system applied across core modules</li>
           <li><strong>Improved Navigation:</strong> Added links to sidebar for easy access to all features</li>
           <li><strong>Better UX:</strong> Smooth animations and modern design patterns throughout</li>
         </ul>

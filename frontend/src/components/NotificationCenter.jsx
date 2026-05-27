@@ -155,8 +155,7 @@ const NotificationCenter = () => {
         { id: "all", label: "All", icon: "📋" },
         { id: "unread", label: "Unread", icon: "📬" },
         { id: "achievement", label: "Achievements", icon: "🏆" },
-        { id: "challenge", label: "Challenges", icon: "🎯" },
-        { id: "friend_request", label: "Social", icon: "👥" }
+        { id: "challenge", label: "Challenges", icon: "🎯" }
     ];
 
     const getNotificationIcon = (type) => {

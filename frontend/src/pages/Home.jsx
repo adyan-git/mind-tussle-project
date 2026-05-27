@@ -4,9 +4,6 @@ import { motion } from "framer-motion";
 import "./Home.css";
 import "../App.css";
 import axios from "../utils/axios";
-import ThemeSelector from "../components/ThemeSelector";
-import AdvancedThemeSelector from "../components/AdvancedThemeSelector";
-import { ThemeContext } from "../context/ThemeContext";
 import Loading from "../components/Loading";
 import NotificationModal from "../components/NotificationModal";
 import { useNotification } from "../hooks/useNotification";
@@ -32,6 +29,11 @@ const Home = () => {
         completedQuizzes: 0,
         averageScore: 0,
         totalXP: 0
+    });
+    const [progressStats, setProgressStats] = useState({
+        dayStreak: 0,
+        bestStreak: 0,
+        quizzesCompletedToday: 0
     });
 
     // Notification system
@@ -62,6 +64,11 @@ const Home = () => {
             // Update user state with fresh data from API and localStorage
             setUser(data);
             localStorage.setItem("user", JSON.stringify(data));
+            setProgressStats((prev) => ({
+                ...prev,
+                dayStreak: data.loginStreak || 0,
+                bestStreak: data.quizStreak || 0
+            }));
 
             // Fetch recent quizzes
             let quizzes = [];
@@ -104,6 +111,23 @@ const Home = () => {
                     averageScore: parseFloat(avgScore),
                     totalXP: Math.round(data.xp) || 0
                 });
+
+                const today = new Date();
+                const isSameDay = (value) => {
+                    if (!value) return false;
+                    const date = new Date(value);
+                    return (
+                        date.getFullYear() === today.getFullYear() &&
+                        date.getMonth() === today.getMonth() &&
+                        date.getDate() === today.getDate()
+                    );
+                };
+
+                const todayReports = reports.filter((r) => isSameDay(r.createdAt || r.updatedAt || r.date));
+                setProgressStats((prev) => ({
+                    ...prev,
+                    quizzesCompletedToday: todayReports.length
+                }));
             } catch (reportError) {
                 console.error("Error fetching reports:", reportError);
             }
@@ -214,6 +238,35 @@ const Home = () => {
 
             {/* XP Progress Bar */}
             <XPBar xp={xp} level={level} />
+
+            <motion.div
+                className="dashboard-progress-grid"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45, duration: 0.5 }}
+            >
+                <div className="progress-stat-card">
+                    <h3>Day Streak</h3>
+                    <p>{progressStats.dayStreak}</p>
+                </div>
+                <div className="progress-stat-card">
+                    <h3>Best Streak</h3>
+                    <p>{progressStats.bestStreak}</p>
+                </div>
+                <div className="progress-stat-card progress-today">
+                    <h3>Today's Progress</h3>
+                    <p>{progressStats.quizzesCompletedToday}</p>
+                    <div className="progress-kpis">
+                        <span>Quizzes Completed</span>
+                    </div>
+                    <div className="today-progress-track">
+                        <div
+                            className="today-progress-fill"
+                            style={{ width: `${Math.min(100, progressStats.quizzesCompletedToday * 20)}%` }}
+                        />
+                    </div>
+                </div>
+            </motion.div>
 
             {/* Stats Dashboard */}
             <motion.div
@@ -550,26 +603,6 @@ const Home = () => {
                     </div>
                 </motion.div>
             )}
-
-            {/* Theme Selection */}
-            <motion.div
-                className="theme-section"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.5, duration: 0.6 }}
-            >
-                <h2 className="section-title">Customize Your Experience</h2>
-                <div className="theme-selectors">
-                    <ThemeSelector />
-                    <AdvancedThemeSelector
-                        currentTheme={document.documentElement.getAttribute('data-theme') || 'Default'}
-                        onThemeChange={(themeName) => {
-                            document.documentElement.setAttribute('data-theme', themeName);
-                            localStorage.setItem('theme', themeName);
-                        }}
-                    />
-                </div>
-            </motion.div>
 
             {/* Notification Modal */}
             <NotificationModal

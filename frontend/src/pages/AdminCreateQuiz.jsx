@@ -124,7 +124,7 @@ const AdminCreateQuiz = () => {
 
     return (
         <div className="admin-create-page">
-            <h1>Admin Suite - Manual Quiz Creator</h1>
+            <h1>Quiz Creator</h1>
             <p className="subtext">Create quizzes manually or auto-fill from Gemini.</p>
 
             <div className="gemini-box">
@@ -132,7 +132,7 @@ const AdminCreateQuiz = () => {
                 <textarea
                     value={geminiPassage}
                     onChange={(e) => setGeminiPassage(e.target.value)}
-                    placeholder="Paste source paragraph here..."
+                    placeholder="Paste your source paragraph, article, or documentation text here. Gemini will parse this context to generate valid, factual questions and answers..."
                     rows={6}
                 />
                 <button type="button" onClick={autofillWithGemini} disabled={isGenerating}>

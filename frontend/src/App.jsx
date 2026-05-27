@@ -50,7 +50,6 @@ import Contact from "./pages/Contact";
 import UserAnalyticsDashboard from "./pages/UserAnalyticsDashboard";
 import XPLeaderboard from "./pages/XPLeaderboard";
 import StudyStreakPage from "./pages/StudyStreakPage";
-import ThemePage from "./pages/ThemePage";
 import HelpGuide from "./pages/HelpGuide";
 import Bookmarks from "./pages/Bookmarks";
 import SearchResults from "./pages/SearchResults";
@@ -251,8 +250,6 @@ const App = () => {
                                 <Route path="/test-features" element={<TestPage />} />
                                 <Route path="/enhanced-dashboard" element={<EnhancedDashboard />} />
                                 <Route path="/achievements" element={<AchievementSystem />} />
-                                <Route path="/themes" element={<ThemePage />} />
-
                                 {/* Phase 3: Social & Gamification Routes */}
                                 <Route path="/friends" element={<FriendsSystem />} />
                                 <Route path="/study-groups" element={<StudyGroups />} />

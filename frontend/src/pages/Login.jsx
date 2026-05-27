@@ -1,9 +1,8 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "../utils/axios";
 import "./Login.css";
 import "../App.css";
-import { ThemeContext } from "../context/ThemeContext";
 import NotificationModal from "../components/NotificationModal";
 import { useNotification } from "../hooks/useNotification";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
@@ -17,7 +16,6 @@ const Login = () => {
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const navigate = useNavigate();
-    const { changeTheme } = useContext(ThemeContext);
 
     // Notification system
     const { notification, showError, hideNotification } = useNotification();
@@ -110,10 +108,6 @@ const Login = () => {
                 setLoading(false);
                 return;
             }
-
-            // ✅ Apply theme immediately after login
-            const userTheme = responseData.user.selectedTheme || "Default";
-            changeTheme(userTheme);
 
             // ✅ Navigate based on role
             if (responseData.user.role === "admin") {
