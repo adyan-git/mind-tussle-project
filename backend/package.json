@@ -18,7 +18,8 @@
     "dev": "nodemon --require dotenv/config server.js",
     "seed": "node scripts/seed.js",
     "lint": "eslint .",
-    "check-models": "node --require dotenv/config utils/checkGeminiModels.js"
+    "check-models": "node --require dotenv/config utils/checkGeminiModels.js",
+    "db:index": "node utils/initIndices.js"
   },
   "keywords": [],
   "dependencies": {

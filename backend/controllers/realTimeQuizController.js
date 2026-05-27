@@ -25,6 +25,20 @@ class QuizRoom {
         this.answers = new Map(); // questionIndex -> Map(userId -> answer)
         this.scores = new Map(); // userId -> score
         this.createdAt = new Date();
+        this.isTransitioning = false;
+        this.questionTimerId = null;
+        this.pendingAdvanceTimer = null;
+    }
+
+    clearTimers() {
+        if (this.questionTimerId) {
+            clearTimeout(this.questionTimerId);
+            this.questionTimerId = null;
+        }
+        if (this.pendingAdvanceTimer) {
+            clearTimeout(this.pendingAdvanceTimer);
+            this.pendingAdvanceTimer = null;
+        }
     }
 
     addPlayer(userId, userInfo) {
@@ -337,6 +351,8 @@ export const initializeRealTimeQuiz = (server) => {
                 // Initialize quiz state
                 room.status = "in_progress";
                 room.currentQuestion = 0;
+                room.isTransitioning = false;
+                room.clearTimers();
                 room.startTime = new Date();
                 room.scores.clear();
                 room.answers.clear();
@@ -374,6 +390,11 @@ export const initializeRealTimeQuiz = (server) => {
                 if (!room.answers.has(questionIndex)) {
                     room.answers.set(questionIndex, new Map());
                 }
+                const answersForQuestion = room.answers.get(questionIndex);
+                if (answersForQuestion.has(socket.userId)) {
+                    logger.warn(`Duplicate answer ignored for user ${socket.userId} in room ${roomId} on question ${questionIndex}`);
+                    return;
+                }
 
                 const question = room.quiz.questions[questionIndex];
                 const correctAnswer = question.correctAnswer;
@@ -400,7 +421,7 @@ export const initializeRealTimeQuiz = (server) => {
                 }
 
                 // Record answer
-                room.answers.get(questionIndex).set(socket.userId, {
+                answersForQuestion.set(socket.userId, {
                     answer,
                     timeSpent,
                     submittedAt: new Date(),
@@ -417,7 +438,7 @@ export const initializeRealTimeQuiz = (server) => {
                 io.to(roomId).emit("leaderboard_update", { leaderboard: getLeaderboard(room) });
 
                 // Check if all players have answered
-                const playersAnswered = room.answers.get(questionIndex).size;
+                const playersAnswered = answersForQuestion.size;
                 const totalPlayers = room.getPlayerCount();
 
                 io.to(roomId).emit("answer_submitted", {
@@ -427,10 +448,10 @@ export const initializeRealTimeQuiz = (server) => {
                     totalPlayers
                 });
 
-                // If all answered or time is up, move to next question
+                // If all answered, schedule advance (guarded against duplicate concurrent transitions)
                 if (playersAnswered === totalPlayers) {
-                    logger.info(`All players have answered in room ${roomId}, moving to next question`);
-                    setTimeout(() => nextQuestion(room, io), 2000); // 2 second delay
+                    logger.info(`All players have answered in room ${roomId}, scheduling next question`);
+                    scheduleQuestionAdvance(room, io, 2000);
                 }
 
             } catch (error) {
@@ -474,51 +495,133 @@ export const initializeRealTimeQuiz = (server) => {
     });
 
     // Helper functions
-    function startQuestion(room, io) {
-        const questionIndex = room.currentQuestion;
-        const question = room.quiz.questions[questionIndex];
+    function scheduleQuestionAdvance(room, io, delayMs = 2000) {
+        if (room.isTransitioning || room.status !== "in_progress") {
+            return;
+        }
+        if (room.pendingAdvanceTimer) {
+            return;
+        }
+        room.clearTimers();
+        room.pendingAdvanceTimer = setTimeout(() => {
+            room.pendingAdvanceTimer = null;
+            tryAdvanceQuestion(room, io);
+        }, delayMs);
+    }
 
-        if (!question) {
+    function tryAdvanceQuestion(room, io) {
+        if (room.isTransitioning) {
+            logger.debug(`Room ${room.id}: advance skipped (already transitioning)`);
+            return false;
+        }
+        if (room.status !== "in_progress") {
+            return false;
+        }
+        room.isTransitioning = true;
+        room.clearTimers();
+        try {
+            nextQuestion(room, io);
+            return true;
+        } catch (error) {
+            room.isTransitioning = false;
+            logger.error({
+                message: `Room ${room.id}: question transition failed`,
+                error: error.message,
+                stack: error.stack
+            });
+            return false;
+        }
+    }
+
+    function startQuestion(room, io) {
+        try {
+            if (!room.quiz?.questions?.length) {
+                room.isTransitioning = false;
+                endQuiz(room, io);
+                return;
+            }
+
+            const questionIndex = room.currentQuestion;
+            if (questionIndex < 0 || questionIndex >= room.quiz.questions.length) {
+                room.isTransitioning = false;
+                endQuiz(room, io);
+                return;
+            }
+
+            const question = room.quiz.questions[questionIndex];
+            if (!question) {
+                room.isTransitioning = false;
+                endQuiz(room, io);
+                return;
+            }
+
+            room.questionStartTime = new Date();
+
+            io.to(room.id).emit("new_question", {
+                questionIndex,
+                question: {
+                    question: question.question,
+                    options: question.options,
+                    questionNumber: questionIndex + 1,
+                    totalQuestions: room.quiz.questions.length
+                },
+                timeLimit: room.settings.timePerQuestion
+            });
+
+            room.isTransitioning = false;
+
+            const timeMs = (room.settings.timePerQuestion || 30) * 1000;
+            room.questionTimerId = setTimeout(() => {
+                room.questionTimerId = null;
+                if (room.status === "in_progress" && room.currentQuestion === questionIndex && !room.isTransitioning) {
+                    tryAdvanceQuestion(room, io);
+                }
+            }, timeMs);
+        } catch (error) {
+            room.isTransitioning = false;
+            logger.error({
+                message: `Room ${room.id}: startQuestion failed`,
+                error: error.message,
+                stack: error.stack
+            });
+            try {
+                endQuiz(room, io);
+            } catch (endErr) {
+                logger.error({ message: `Room ${room.id}: endQuiz after startQuestion failure`, error: endErr.message });
+            }
+        }
+    }
+
+    function nextQuestion(room, io) {
+        const questionIndex = room.currentQuestion;
+
+        if (!room.quiz?.questions?.length) {
+            room.isTransitioning = false;
             endQuiz(room, io);
             return;
         }
 
-        room.questionStartTime = new Date();
+        if (questionIndex < 0 || questionIndex >= room.quiz.questions.length) {
+            room.isTransitioning = false;
+            endQuiz(room, io);
+            return;
+        }
 
-        // Send question to all players (without correct answer)
-        io.to(room.id).emit("new_question", {
-            questionIndex,
-            question: {
-                question: question.question,
-                options: question.options,
-                questionNumber: questionIndex + 1,
-                totalQuestions: room.quiz.questions.length
-            },
-            timeLimit: room.settings.timePerQuestion
-        });
-
-        // Auto-advance after time limit
-        setTimeout(() => {
-            if (room.status === "in_progress" && room.currentQuestion === questionIndex) {
-                nextQuestion(room, io);
-            }
-        }, room.settings.timePerQuestion * 1000);
-    }
-
-    function nextQuestion(room, io) {
-        // Calculate scores for current question
-        const questionIndex = room.currentQuestion;
         const question = room.quiz.questions[questionIndex];
+        if (!question) {
+            room.isTransitioning = false;
+            endQuiz(room, io);
+            return;
+        }
+
         const correctAnswer = question.correctAnswer;
         const questionAnswers = room.answers.get(questionIndex) || new Map();
 
         const results = [];
         room.players.forEach((player, userId) => {
             const playerAnswer = questionAnswers.get(userId);
-
-            // Handle both number and letter format answers
-            let isCorrect = playerAnswer ? playerAnswer.isCorrect : false;
-            let points = playerAnswer ? playerAnswer.points : 0;
+            const isCorrect = playerAnswer ? playerAnswer.isCorrect : false;
+            const points = playerAnswer ? playerAnswer.points : 0;
 
             results.push({
                 playerId: userId,
@@ -530,7 +633,6 @@ export const initializeRealTimeQuiz = (server) => {
             });
         });
 
-        // Send question results
         io.to(room.id).emit("question_results", {
             questionIndex,
             correctAnswer,
@@ -539,16 +641,26 @@ export const initializeRealTimeQuiz = (server) => {
             leaderboard: getLeaderboard(room)
         });
 
-        // Move to next question or end quiz
-        room.currentQuestion++;
+        room.currentQuestion += 1;
+
         if (room.currentQuestion >= room.quiz.questions.length) {
-            setTimeout(() => endQuiz(room, io), 3000); // 3 second delay before ending
+            room.isTransitioning = false;
+            setTimeout(() => {
+                try {
+                    endQuiz(room, io);
+                } catch (error) {
+                    logger.error({ message: `Room ${room.id}: endQuiz failed`, error: error.message });
+                }
+            }, 3000);
         } else {
-            setTimeout(() => startQuestion(room, io), 5000); // 5 second delay before next question
+            room.isTransitioning = false;
+            setTimeout(() => startQuestion(room, io), 5000);
         }
     }
 
     function endQuiz(room, io) {
+        room.clearTimers();
+        room.isTransitioning = false;
         room.status = "finished";
         let finalLeaderboard = [];
 

@@ -1,8 +1,11 @@
 node_modules
 .env
+.env.*
 .env_prod
 .env.local
 .env.production
+!.env.example
+!.env*.example
 logs/
 *.log
 logs/*

@@ -70,7 +70,17 @@ export async function createReport(req, res) {
     logger.info(`Creating report for user ${req.body.username}`);
     try {
         const { username, quizName, score, total, questions, quizCategory, quizId: rawQuizId } = req.body;
+        const { answers } = req.body;
         const userId = req.user?.id; // Get user ID from JWT token
+
+        // Empty quiz shield: reject requests with no answers payload or no question payload.
+        if ((Array.isArray(answers) && answers.length === 0) || !Array.isArray(questions) || questions.length === 0) {
+            logger.warn("Rejected empty quiz report payload");
+            return res.status(400).json({
+                success: false,
+                message: "Failed to save report due to invalid quiz structure."
+            });
+        }
 
         if (!username || !quizName || !questions || questions.length === 0) {
             logger.warn("Missing required fields for report creation");
@@ -91,6 +101,13 @@ export async function createReport(req, res) {
             quizObjectId = rawQuizId;
             const qz = await Quiz.findById(rawQuizId).select("category questions.question questions.difficulty").lean();
             if (qz) {
+                if (!Array.isArray(qz.questions) || qz.questions.length === 0) {
+                    logger.warn(`Rejected report for quiz ${rawQuizId}: quiz has no questions`);
+                    return res.status(400).json({
+                        success: false,
+                        message: "Failed to save report due to invalid quiz structure."
+                    });
+                }
                 if (!resolvedCategory && qz.category?.trim()) {
                     resolvedCategory = qz.category.trim();
                 }
@@ -340,7 +357,10 @@ export async function createReport(req, res) {
         return sendCreated(res, report, "Report saved and bonuses applied!");
     } catch (error) {
         logger.error({ message: "Error saving report", error: error.message, stack: error.stack });
-        throw new AppError("Failed to save report", 500);
+        return res.status(400).json({
+            success: false,
+            message: "Failed to save report due to invalid quiz structure."
+        });
     }
 }
 

@@ -245,6 +245,24 @@ const sessionConfig = {
 // MongoDB Connection
 const PORT = process.env.PORT || 5000;
 
+// Self-executing cleanup for the corrupt Space Demo Quiz
+const cleanCorruptQuizzes = async () => {
+    try {
+        const quizCollection = mongoose.connection.db.collection('quizzes');
+        const result = await quizCollection.deleteMany({
+            $or: [
+                { title: "Space & History — Demo Quiz" },
+                { _id: new mongoose.Types.ObjectId("6913518edd9b7650a4c303ce") }
+            ]
+        });
+        if (result.deletedCount > 0) {
+            console.log(`[Database Sync] Successfully removed ${result.deletedCount} broken demo quiz documents.`);
+        }
+    } catch (error) {
+        console.error("[Database Sync Error] Failed to clear corrupt quiz elements:", error);
+    }
+};
+
 const startServer = async () => {
     try {
         if (!process.env.MONGO_URI) {
@@ -262,6 +280,7 @@ const startServer = async () => {
         // Connect to MongoDB first (needed for MongoStore fallback and app data)
         await mongoose.connect(process.env.MONGO_URI);
         logger.info("Connected to MongoDB");
+        cleanCorruptQuizzes();
 
         if (isProduction) {
             sessionConfig.store = MongoStore.create({
