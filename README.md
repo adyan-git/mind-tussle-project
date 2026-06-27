@@ -3,6 +3,61 @@
 MindTussle is a full-stack quiz platform built with React, Express, Socket.io, and MongoDB.  
 It supports timed quiz sessions, real-time multiplayer battles, AI-assisted quiz creation, and role-based admin workflows in a single product.
 
+---
+
+## 🎥 Platform Walkthroughs (Live Action)
+
+To see the Respective Admin, User Panels and AI Generation of questions through passage etc, check out these full platform walkthroughs:
+
+* [▶️ Watch: Admin Dashboard & Overview](./screenshots/admin-dashboard.mp4)
+* [▶️ Watch: User Dashboard & Gamification](./screenshots/user-dashboard.mp4)
+* [▶️ Watch: Gemini AI Dynamic Quiz Creation](./screenshots/gemini-quiz-creation.mp4)
+
+---
+
+## 📸 Core Features & Interface Previews
+
+MindTussle provides distinct, purpose-built interfaces depending on the user's role. Below is a visual walkthrough of the platform's architecture.
+
+### 🚪 1. Authentication & Role-Based Access
+Strict segregation between Educator (Admin) and Student (User) boundaries.
+* **Secure Role Registration:** ![RBAC Signup](./screenshots/rbac-signup.png)
+* **Login Gateway:** ![Login Form](./screenshots/login-form.png)
+
+### 🎓 2. The Educator / Admin Experience
+Tools engineered for rapid content creation and platform management.
+* **Admin Navigation Interface:** ![Admin Navbar](./screenshots/admin-navbar.png)
+* **Quiz Creator Suite:** The terminal where educators structure and manage assessments.
+  ![Quiz Creator](./screenshots/quiz-creator.png)
+
+
+### 🎮 3. The Student / User Experience
+A hyper-focused environment for gamified learning and performance tracking.
+* **User Navigation Interface:** ![User Navbar](./screenshots/user-navbar.png)
+* **Granular Diagnostic Reports:** Post-assessment knowledge gap analysis.
+  ![Quiz Report](./screenshots/quiz-report.png)
+* **Milestones & Badges:** Event-driven programmatic achievements.
+  ![Achievements](./screenshots/achievements.png)
+* **Global Activity Feed:** Real-time logging of platform events.
+  ![Activity Feed](./screenshots/activity-feed.png)
+
+  
+### ⚔️ 4. Real-Time Competitive Architecture (Socket.io)
+Multiplayer battle rooms powered by persistent, bi-directional WebSockets to ensure sub-10ms event transmission latency—providing a massive performance advantage and eliminating the overhead of legacy HTTP polling.
+* **Battle Mode Initialization:** ![Real-Time Battle Mode](./screenshots/real-time-battlemode.png)
+* **Lobby & Match Start:** Synchronized server-authoritative lobbies.
+  ![Real-Time Start](./screenshots/realtime-start.png)
+* **Live Quiz Arena:** ![Live Quiz Interface](./screenshots/quiz-interface.png)
+* **Match Termination & Recalculation:** ![Quiz End](./screenshots/quiz-end.png)
+* **Historical Battle Logs:** ![Battle History](./screenshots/realtime-battlehistory.png)
+
+### 🏆 5. Gamification & Merit Systems
+Mathematical scaling formulas calculating ranks and leaderboards.
+* **Global Competitive Leaderboard:** ![Global Leaderboard](./screenshots/leaderboard.png)
+* **Experience Point (XP) Rankings:** ![XP Leaderboard](./screenshots/xpleaderboard.png)
+
+---
+
 ## Features
 
 ### Authentication & Security
@@ -40,6 +95,8 @@ It supports timed quiz sessions, real-time multiplayer battles, AI-assisted quiz
 - Admin reporting routes for quiz and written-test result monitoring.
 - Role-aware navigation and panel access based on authenticated user role.
 
+---
+
 ## Tech Stack
 
 | Layer | Technologies |
@@ -51,6 +108,8 @@ It supports timed quiz sessions, real-time multiplayer battles, AI-assisted quiz
 | AI | Google Generative AI (Gemini) |
 | Testing | Vitest (frontend), Jest + Supertest (backend) |
 
+---
+
 ## System Architecture
 
 - **Frontend (React + Vite):** Single-page application with protected routes, admin/user modules, quiz interfaces, and analytics screens.
@@ -58,6 +117,8 @@ It supports timed quiz sessions, real-time multiplayer battles, AI-assisted quiz
 - **Realtime Layer (Socket.io):** Live room lifecycle handling for battle creation, joins, synchronized questions, scoring, and final leaderboards.
 - **Database (MongoDB + Mongoose):** Persistent storage for users, quizzes, reports, analytics, and activity data.
 - **AI Layer (Gemini):** Server-side quiz generation path used in admin authoring workflows.
+
+---
 
 ## Project Structure
 
@@ -227,6 +288,3 @@ Local URLs:
 - Add richer export/report options for admins and instructors.
 - Introduce horizontal socket scaling strategy for higher concurrency workloads.
 
-## License
-
-This project is licensed under the repository's license terms.
